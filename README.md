@@ -6,11 +6,10 @@ Calendar meetings; pulls curated tech news (AI, robotics, motion graphics,
 Blender, Blender add-ons, 3D tools, and new image/video models); and gives you a
 launchpad of app shortcuts.
 
-Everything is **Markdown-first**: the dashboard reads and writes plain `.md`
-files inside your Obsidian vault, so your notes stay portable and Obsidian stays
-the source of truth. No build step and no install for the browser version — and
-an optional local server (or the standalone desktop app) adds live sync and
-desktop app launching.
+Everything is saved in your browser and, when you **sign in**, synced privately
+across your devices (PC + phone) through your own account. No build step and no
+install for the browser version — and a standalone Windows desktop app adds
+native app launching.
 
 ---
 
@@ -25,9 +24,7 @@ You can still double-click `index.html` to open it straight from the file — bu
 then calendar/news sync has to rely on flaky public CORS proxies. Use the `.bat`
 if you want sync.
 
-> Use **Chrome, Edge, Vivaldi, Brave** — any Chromium browser. The vault folder
-> picker and some features rely on browser APIs that Firefox/Safari don’t fully
-> support.
+> Use **Chrome, Edge, Vivaldi, Brave** — any Chromium browser.
 >
 > The `.bat` needs **Node.js** (install the LTS version once from
 > [nodejs.org](https://nodejs.org)); it will tell you if it's missing.
@@ -37,9 +34,9 @@ if you want sync.
 ## Desktop app (Windows)
 
 Morning Brief also ships as a standalone Windows desktop app. It runs in its own
-window (no browser chrome), launches apps, custom protocols, `.exe` files and
-folders natively, and remembers your Obsidian vault folder between launches — no
-re-authorization, and no browser folder permissions to re-grant.
+window (no browser chrome) and launches apps, custom protocols, `.exe` files and
+folders natively. Sign in with the same account you use on your phone and the two
+stay in sync.
 
 ### Build it
 
@@ -62,9 +59,8 @@ To run the app straight from source while developing, use `npm start`.
   so calendar and news sync work with no separate `Start Dashboard.bat` window.
 - Shortcuts launch through the app directly (native OS APIs); web links open in
   your default browser rather than in-app.
-- The vault is managed through the real filesystem: pick a folder once and it is
-  remembered between launches. The six Markdown files stay the source of truth
-  in Obsidian, exactly as in browser mode.
+- Sign in with the same account you use on your phone and the two stay in sync
+  (changes push within seconds; it pulls every 60s).
 
 Browser mode (below) is unchanged and still fully supported.
 
@@ -119,27 +115,15 @@ Image & Video Models
   with `Start Dashboard.bat`. You can point it at any other proxy under
   **Topics → CORS proxy prefix** if you prefer.
 
-### 4. Vault & Obsidian
-Click **Connect Vault** (or Setup → Vault → *Choose vault folder*), then pick a
-folder **inside your Obsidian vault** (for example `Vault/Dashboard`).
+### 4. Sign in & sync
+Click **Sign in** (top-right) → **Create account** with an email and password.
+From then on your dashboard — todos, projects, hours, shortcuts, news, calendar
+and settings — is saved to your own account and **synced automatically**:
+changes push within a couple of seconds and it pulls every 60 seconds. Sign in
+with the same account on your phone and PC and they stay in step.
 
-The dashboard creates and keeps these six files in sync:
-
-| File | Contents |
-| --- | --- |
-| `todos.md` | Your to-do list (priority, due date, project tag) |
-| `projects.md` | Work and personal projects with status, nested to-do lists and auto-calculated progress |
-| `hours.md` | A weekly timesheet (client, project, hours); finished weeks are archived under a History section |
-| `shortcuts.md` | Your launchpad shortcuts |
-| `news.md` | News topics, feed URLs, and the blocked-words list |
-| `calendar.md` | Your Google iCal URLs (work, personal, …) and manual events |
-
-Edit them in Obsidian any time, then click **Reload from vault** in Setup →
-Vault (or just reload the page) to pull your edits back in. Changes you make in
-the dashboard are written to the files automatically.
-
-If you don’t connect a vault, everything still works — it’s just saved in the
-browser instead. Use **Setup → Data → Export** for a JSON or Markdown backup.
+No account? Everything still works — it's just saved in this browser. Use
+**Setup → Data → Export** for a JSON or Markdown backup.
 
 ### 5. Launchpad
 Click the **＋** on the Launchpad panel to add a shortcut. Give it a name, a
@@ -199,10 +183,8 @@ and calendar sync. Your data stays local — nothing is uploaded anywhere.
   with no server running, the dashboard falls back to the public proxies in
   Setup → Calendar, which may fail. **⤓ Import .ics** always works without a
   server.
-- **Vault sync in the browser** uses the File System Access API — Chrome/Edge
-  only, and the folder must be re-authorized if the browser forgets permission.
-  In the **desktop app** the vault is handled through the filesystem instead, so
-  the folder is remembered across launches.
+- **Sync** requires signing in, and is last-write-wins per account: if you edit
+  the same thing on two devices while offline, the most recent save wins.
 - **Local app launching needs the local server.** A plain web page can't open
   `.exe` files or custom protocols, so the dashboard routes those through
   `serve.js` (`/launch`). Run `Start Dashboard.bat` (or the desktop app). The
@@ -222,7 +204,10 @@ and calendar sync. Your data stays local — nothing is uploaded anywhere.
   shared by the CLI and the desktop app.
 - `serve.js` — CLI wrapper that starts the server for browser mode.
 - `electron/` — desktop app: `main.js` (entry), `preload.js` (IPC bridge),
-  `config.js` (window bounds + vault path store).
+  `config.js` (window bounds + server port store).
+- `mb-config.js` / `mb-cloud.js` — cloud sign-in + sync (Supabase) and the
+  `proxy` / `ai` relays; `manifest.webmanifest` + `sw.js` + icons make it a PWA.
+- `supabase/` — the database schema and the Edge Functions.
 - `build/icon.ico` — the app icon.
 - `Start Dashboard.bat` — double-click launcher (starts the server + browser).
 - `package.json` — Electron/electron-builder config (`npm start`, `npm run dist`).

@@ -2,7 +2,7 @@
  * Tiny JSON config store for the Electron app.
  * Lives at <userData>/config.json. Synchronous read/write, no dependencies.
  *
- * Shape: { vaultPath: string|null, window: { width, height, x, y } }
+ * Shape: { serverPort: number|null, window: { width, height, x, y } }
  */
 "use strict";
 
@@ -10,7 +10,7 @@ const { app } = require("electron");
 const fs = require("fs");
 const path = require("path");
 
-const DEFAULTS = { vaultPath: null, serverPort: null, window: {} };
+const DEFAULTS = { serverPort: null, window: {} };
 
 function file() {
   return path.join(app.getPath("userData"), "config.json");

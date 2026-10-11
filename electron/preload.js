@@ -10,14 +10,6 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("morningBrief", {
   version: "1",
   platform: process.platform,
-  // Vault (absolute-path backed, main-process fs)
-  vault: {
-    pick:      ()            => ipcRenderer.invoke("mb:vault:pick"),
-    restore:   ()            => ipcRenderer.invoke("mb:vault:restore"),
-    read:      (name)        => ipcRenderer.invoke("mb:vault:read", name),
-    write:     (name, text)  => ipcRenderer.invoke("mb:vault:write", name, text),
-    forget:    ()            => ipcRenderer.invoke("mb:vault:forget"),
-  },
   launch:       (target)     => ipcRenderer.invoke("mb:launch", target),
   openExternal: (url)        => ipcRenderer.invoke("mb:openExternal", url),
 });

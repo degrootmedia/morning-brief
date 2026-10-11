@@ -3,7 +3,7 @@
  *
  * Startup: start the embedded companion server (ephemeral port, HTTP /launch
  * disabled) then load `index.html` from it in a BrowserWindow. The renderer
- * gets desktop capabilities (vault + launcher) exclusively through the narrow
+ * gets desktop capabilities (native launcher) exclusively through the narrow
  * `window.morningBrief` IPC surface defined in preload.js.
  */
 "use strict";
@@ -15,7 +15,6 @@ const { fileURLToPath } = require("url");
 const { startServer } = require("../lib/server");
 const config = require("./config");
 
-const VAULT_FILES = ["todos.md", "projects.md", "hours.md", "shortcuts.md", "news.md", "calendar.md"];
 const DEFAULT_BOUNDS = { width: 1280, height: 900, minWidth: 900, minHeight: 640 };
 const BACKGROUND = "#fff3e2";
 
@@ -56,14 +55,6 @@ function schedulePersistBounds() {
   boundsTimer = setTimeout(persistBounds, 400);
 }
 
-/* ---------- vault helpers ---------- */
-function vaultDir() {
-  return cfg.vaultPath || null;
-}
-function validVaultName(name) {
-  return typeof name === "string" && VAULT_FILES.includes(name);
-}
-
 /* ---------- launch (mirrors lib/server.js rules) ---------- */
 async function launchTarget(target) {
   const t = String(target == null ? "" : target).trim();
@@ -100,56 +91,6 @@ async function launchTarget(target) {
 
 /* ---------- IPC ---------- */
 function registerIpc() {
-  ipcMain.handle("mb:vault:pick", async () => {
-    const res = await dialog.showOpenDialog(win, {
-      title: "Choose a folder inside your Obsidian vault",
-      properties: ["openDirectory", "createDirectory"]
-    });
-    if (res.canceled || !res.filePaths || !res.filePaths.length) return null;
-    const p = res.filePaths[0];
-    cfg.vaultPath = p;
-    config.write(cfg);
-    return { name: path.basename(p), path: p };
-  });
-
-  ipcMain.handle("mb:vault:restore", async () => {
-    const p = vaultDir();
-    if (!p) return null;
-    try {
-      if (!fs.statSync(p).isDirectory()) throw new Error("Not a directory");
-    } catch {
-      cfg.vaultPath = null;
-      config.write(cfg);
-      return null;
-    }
-    return { name: path.basename(p), path: p };
-  });
-
-  ipcMain.handle("mb:vault:read", async (_e, name) => {
-    if (!validVaultName(name)) throw new Error("Unknown vault file: " + name);
-    const dir = vaultDir();
-    if (!dir) return null;
-    try {
-      return fs.readFileSync(path.join(dir, name), "utf8");
-    } catch (e) {
-      if (e && e.code === "ENOENT") return null;
-      throw e;
-    }
-  });
-
-  ipcMain.handle("mb:vault:write", async (_e, name, text) => {
-    if (!validVaultName(name)) throw new Error("Unknown vault file: " + name);
-    const dir = vaultDir();
-    if (!dir) return;
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, name), text == null ? "" : String(text), "utf8");
-  });
-
-  ipcMain.handle("mb:vault:forget", async () => {
-    cfg.vaultPath = null;
-    config.write(cfg);
-  });
-
   ipcMain.handle("mb:launch", async (_e, target) => launchTarget(target));
 
   ipcMain.handle("mb:openExternal", async (_e, url) => {

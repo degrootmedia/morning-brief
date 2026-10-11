@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Morning Brief — Daily Dashboard</title>
-<meta name="description" content="A colorful daily dashboard: calendar, work hours, projects, to-dos, curated tech news and app shortcuts, synced to Markdown files in your Obsidian vault.">
+<meta name="description" content="A colorful daily dashboard: calendar, work hours, projects, to-dos, curated tech news and app shortcuts — synced across your PC and phone.">
 <meta name="color-scheme" content="light">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -370,6 +370,119 @@ textarea{resize:vertical;min-height:70px}
 .foot{max-width:1360px;margin:26px auto 0;padding:0 clamp(12px,3vw,28px);color:var(--ink-soft);font-size:.82rem}
 .foot code{background:var(--paper-2);padding:1px 5px;border-radius:5px}
 
+/* =========================================================================
+   Retro Mac theme — activated by <html data-theme="retro">
+   Restyles panels as classic Mac OS windows (pinstripe title bars, close/zoom
+   boxes, square corners, beveled buttons). Icons are unchanged.
+   ========================================================================= */
+[data-theme="retro"]{
+  --ink:#000;
+  --ink-soft:#3a3a3a;
+  --paper:#d9d9d9;
+  --paper-2:#e6e6e6;
+  --card:#ffffff;
+  --line:#000;
+  --radius:0px;
+  --radius-sm:0px;
+  --shadow:2px 2px 0 rgba(0,0,0,.45);
+  --shadow-sm:1px 1px 0 rgba(0,0,0,.45);
+  --shadow-press:0 0 0 rgba(0,0,0,0);
+  --font-display:"Chicago","Geneva","MS Sans Serif",Tahoma,sans-serif;
+  --font-body:"Geneva","MS Sans Serif",Tahoma,"Segoe UI",sans-serif;
+}
+[data-theme="retro"] body{
+  background:#8f8f8f;
+  background-image:
+    repeating-linear-gradient(45deg,rgba(0,0,0,.06) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(-45deg,rgba(0,0,0,.06) 0 1px,transparent 1px 3px);
+  background-attachment:scroll;
+}
+[data-theme="retro"] .eyebrow{color:#000;letter-spacing:.2em}
+[data-theme="retro"] .brand-sub{color:#2b2b2b}
+[data-theme="retro"] .brand h1{letter-spacing:0}
+
+/* Panels -> windows */
+[data-theme="retro"] .panel{
+  background:#fff;border:1px solid #000;border-radius:0;
+  box-shadow:2px 2px 0 rgba(0,0,0,.5);padding:0 12px 14px;
+}
+[data-theme="retro"] .panel-head{
+  position:relative;margin:0 -12px 12px;padding:5px 26px;min-height:24px;
+  background:#ececec;
+  background-image:repeating-linear-gradient(180deg,rgba(0,0,0,.18) 0 1px,transparent 1px 4px);
+  border-bottom:1px solid #000;
+}
+[data-theme="retro"] .panel-head h2{font-size:1rem;font-weight:800;gap:6px}
+[data-theme="retro"] .panel-head::before,
+[data-theme="retro"] .panel-head::after{
+  content:"";position:absolute;top:50%;width:11px;height:11px;
+  background:#fff;border:1px solid #000;transform:translateY(-50%);
+}
+[data-theme="retro"] .panel-head::before{left:7px}
+[data-theme="retro"] .panel-head::after{right:7px}
+[data-theme="retro"] .icon-badge{
+  width:24px;height:24px;border:1px solid #000;border-radius:2px;box-shadow:none;background:#fff;font-size:.9rem;
+}
+[data-theme="retro"] .chip{border:1px solid #000;border-radius:0;background:#ececec}
+[data-theme="retro"] .clockbox{background:#fff;color:#000;border:1px solid #000;border-radius:0;box-shadow:2px 2px 0 rgba(0,0,0,.5)}
+[data-theme="retro"] .dateline{color:#000}
+[data-theme="retro"] .clock{font-size:clamp(1.3rem,2.6vw,1.8rem)}
+
+/* Buttons */
+[data-theme="retro"] .btn{
+  font-family:var(--font-body);font-weight:700;color:#000;background:#e9e9e9;
+  border:1px solid #000;border-radius:7px;padding:7px 14px;
+  box-shadow:inset -1px -1px 0 #9a9a9a,inset 1px 1px 0 #fff,1px 1px 0 rgba(0,0,0,.4);
+}
+[data-theme="retro"] .btn:hover{transform:none;background:#f3f3f3;box-shadow:inset -1px -1px 0 #9a9a9a,inset 1px 1px 0 #fff,1px 1px 0 rgba(0,0,0,.4)}
+[data-theme="retro"] .btn:active{transform:none;background:#dcdcdc;box-shadow:inset 1px 1px 0 #9a9a9a,inset -1px -1px 0 #fff}
+[data-theme="retro"] .btn-teal,[data-theme="retro"] .btn-tangerine,[data-theme="retro"] .btn-marigold,[data-theme="retro"] .btn-berry,[data-theme="retro"] .btn-ghost{background:#e9e9e9;color:#000}
+[data-theme="retro"] .btn-teal{font-weight:800;box-shadow:inset -1px -1px 0 #9a9a9a,inset 1px 1px 0 #fff,0 0 0 2px #000}
+
+/* Inputs, tabs, tags */
+[data-theme="retro"] input[type=text],[data-theme="retro"] input[type=url],[data-theme="retro"] input[type=date],[data-theme="retro"] input[type=time],[data-theme="retro"] input[type=number],[data-theme="retro"] input[type=email],[data-theme="retro"] input[type=password],[data-theme="retro"] select,[data-theme="retro"] textarea{
+  border:1px solid #000;border-radius:0;background:#fff;box-shadow:inset 1px 1px 0 #b0b0b0;
+}
+[data-theme="retro"] .tab{border:1px solid #000;border-radius:0;background:#e9e9e9}
+[data-theme="retro"] .tab[aria-selected=true]{background:#000;color:#fff}
+[data-theme="retro"] .tag{border:1px solid #000;border-radius:0;background:#fff}
+[data-theme="retro"] .tag.prio-high{background:#000;color:#fff}
+[data-theme="retro"] .tag.prio-med{background:#cfcfcf}
+[data-theme="retro"] .tag.prio-low{background:#e6e6e6}
+
+/* Cards & content */
+[data-theme="retro"] .todo,[data-theme="retro"] .news-item,[data-theme="retro"] .project,[data-theme="retro"] .cal-row,[data-theme="retro"] .ptask-text,[data-theme="retro"] .ptask-edit-row .ptask-text{
+  border:1px solid #000;border-radius:0;background:#fff;box-shadow:none;
+}
+[data-theme="retro"] .next-meeting{background:#dfe9f5;color:#000;border:1px solid #000;border-radius:0;box-shadow:none}
+[data-theme="retro"] .next-meeting .nm-label{opacity:1;color:#333}
+[data-theme="retro"] .next-meeting.is-clear{background:#e3efe3}
+[data-theme="retro"] .event{border:1px solid #000;border-radius:0}
+[data-theme="retro"] .event.now{background:#ffe1b3}
+[data-theme="retro"] .progress{border:1px solid #000;border-radius:0;background:#fff}
+[data-theme="retro"] .progress > span{border-radius:0}
+[data-theme="retro"] .shortcut .tile{border:1px solid #000;border-radius:2px;box-shadow:1px 1px 0 rgba(0,0,0,.5)}
+[data-theme="retro"] table.ts th,[data-theme="retro"] table.ts td{border:1px solid #000}
+[data-theme="retro"] table.ts thead th{background:#ececec}
+[data-theme="retro"] table.ts tr.ts-clientrow td{background:#f0f0f0}
+[data-theme="retro"] table.ts tr.ts-grand td{background:#e6e6e6}
+
+/* Modal -> window */
+[data-theme="retro"] .modal{background:rgba(0,0,0,.5)}
+[data-theme="retro"] .modal-card{border:1px solid #000;border-radius:0;box-shadow:3px 3px 0 rgba(0,0,0,.5);padding:0 18px 18px}
+[data-theme="retro"] .modal-card h3{
+  margin:0 -18px 14px;padding:6px 26px;font-size:1rem;position:relative;
+  background:#ececec;
+  background-image:repeating-linear-gradient(180deg,rgba(0,0,0,.18) 0 1px,transparent 1px 4px);
+  border-bottom:1px solid #000;
+}
+[data-theme="retro"] .modal-card h3::before,
+[data-theme="retro"] .modal-card h3::after{content:"";position:absolute;top:50%;width:11px;height:11px;background:#fff;border:1px solid #000;transform:translateY(-50%)}
+[data-theme="retro"] .modal-card h3::before{left:7px}
+[data-theme="retro"] .modal-card h3::after{right:7px}
+[data-theme="retro"] .toast{border-radius:0;border:1px solid #000}
+[data-theme="retro"] .foot code{background:#e6e6e6}
+
 /* ---------- Responsive ---------- */
 @media (max-width:1080px){
   .p-cal,.p-hours,.p-shortcuts{grid-column:span 6}
@@ -414,7 +527,6 @@ textarea{resize:vertical;min-height:70px}
   </div>
   <div class="topactions">
     <button class="btn btn-ghost" id="authBtn" type="button" style="display:none">Sign in</button>
-    <button class="btn btn-teal" id="vaultBtn" type="button">📓 Connect Vault</button>
     <button class="btn btn-marigold" id="setupBtn" type="button">⚙️ Setup</button>
   </div>
 </header>
@@ -472,6 +584,7 @@ textarea{resize:vertical;min-height:70px}
         <button class="btn btn-sm" id="scAdd" type="button">＋</button>
       </div>
       <div class="shortcut-grid" id="shortcutGrid"></div>
+      <p class="hint" id="scNote" style="margin-top:8px"></p>
     </section>
 
     <!-- Work projects -->
@@ -529,7 +642,7 @@ textarea{resize:vertical;min-height:70px}
 </main>
 
 <footer class="foot">
-  <p>Markdown-first dashboard — state lives in <code>todos.md</code>, <code>projects.md</code>, <code>hours.md</code>, <code>shortcuts.md</code>, <code>news.md</code> and <code>calendar.md</code> inside your vault. Everything else is cached in this browser.</p>
+  <p>Your dashboard is saved in this browser and, when signed in, synced privately to your account.</p>
 </footer>
 
 <!-- Modal -->
@@ -617,14 +730,14 @@ const DEFAULT_TOPICS = [
 const POLITICS_BLOCKLIST = ["politics","political","election","campaign","senate","congress","democrat","republican","gop","parliament","president","prime minister","white house","trump","biden","harris","vote","ballot","immigration","border policy","war in","gaza","ukraine","israel","nato","geopolit"];
 
 const DEFAULT_SHORTCUTS = [
-  { id: uid(), icon: "🎬", name: "Blender",      target: "blender://",                        kind: "app",  color: "#ff6b35" },
-  { id: uid(), icon: "🪄", name: "Bforartists",  target: "bforartists://",                     kind: "app",  color: "#0fa3a3" },
-  { id: uid(), icon: "🔮", name: "Obsidian",     target: "obsidian://open",                    kind: "app",  color: "#ffc145" },
-  { id: uid(), icon: "🐙", name: "GitHub",       target: "https://github.com",                 kind: "web",  color: "#8ac926" },
-  { id: uid(), icon: "▶️", name: "YouTube",      target: "https://www.youtube.com",            kind: "web",  color: "#d7263d" },
-  { id: uid(), icon: "🧊", name: "Sketchfab",    target: "https://sketchfab.com",              kind: "web",  color: "#0fa3a3" },
-  { id: uid(), icon: "🤗", name: "Hugging Face", target: "https://huggingface.co",             kind: "web",  color: "#ffc145" },
-  { id: uid(), icon: "🎞️", name: "After Effects",target: "aftereffects://",                    kind: "app",  color: "#ff6b35" }
+  { id: uid(), icon: "🎬", name: "Blender",      target: "blender://",                        kind: "app",  color: "#ff6b35", platform: "desktop" },
+  { id: uid(), icon: "🪄", name: "Bforartists",  target: "bforartists://",                     kind: "app",  color: "#0fa3a3", platform: "desktop" },
+  { id: uid(), icon: "🔮", name: "Obsidian",     target: "obsidian://open",                    kind: "app",  color: "#ffc145", platform: "desktop" },
+  { id: uid(), icon: "🐙", name: "GitHub",       target: "https://github.com",                 kind: "web",  color: "#8ac926", platform: "all" },
+  { id: uid(), icon: "▶️", name: "YouTube",      target: "https://www.youtube.com",            kind: "web",  color: "#d7263d", platform: "all" },
+  { id: uid(), icon: "🧊", name: "Sketchfab",    target: "https://sketchfab.com",              kind: "web",  color: "#0fa3a3", platform: "all" },
+  { id: uid(), icon: "🤗", name: "Hugging Face", target: "https://huggingface.co",             kind: "web",  color: "#ffc145", platform: "all" },
+  { id: uid(), icon: "🎞️", name: "After Effects",target: "aftereffects://",                    kind: "app",  color: "#ff6b35", platform: "desktop" }
 ];
 
 // The local companion server (serve.js / Start Dashboard.bat) proxies requests
@@ -652,6 +765,12 @@ function localServerBase(){
 const isDesktop = !!(window.morningBrief && window.morningBrief.version);
 // True when the cloud module is present (hosted PWA / signed-in builds).
 const isCloud = !!(window.mbCloud && window.mbCloud.version);
+
+// Themes are applied via a data-theme attribute on <html>. "default" = none.
+function applyTheme(t){
+  if(t === "retro") document.documentElement.dataset.theme = "retro";
+  else document.documentElement.removeAttribute("data-theme");
+}
 let serverOnline = false;
 async function pingServer(){
   try{
@@ -668,7 +787,7 @@ function defaultState(){
   return {
     version: 1,
     profile: { name: "" },
-    settings: { proxy: LOCAL_PROXY, proxies: DEFAULT_PROXIES.slice(), blockPolitics: true, ai: { key: "", model: "auto" } },
+    settings: { proxy: LOCAL_PROXY, proxies: DEFAULT_PROXIES.slice(), blockPolitics: true, ai: { key: "", model: "auto" }, theme: "default" },
     calendar: { calendars: [], events: [], manual: [], lastSync: null },
     work: [],
     personal: [],
@@ -676,7 +795,6 @@ function defaultState(){
     hours: { weekStart: null, entries: [], active: null, history: [] },
     shortcuts: DEFAULT_SHORTCUTS.map(s => ({ ...s })),
     news: { topics: DEFAULT_TOPICS.map(t => ({ ...t, feeds: [...t.feeds], items: [], lastFetch: null })), blocklist: [...POLITICS_BLOCKLIST], activeTopic: "ai" },
-    vault: { name: "", connected: false },
     ui: { todoFilter: "open", openProjects: {} }
   };
 }
@@ -705,7 +823,6 @@ function deepMerge(base, over){
 const save = debounce(() => {
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
   catch(e){ toast("⚠️ Could not save to browser storage."); }
-  vaultWriteAll();
   if(isCloud && window.mbCloud) window.mbCloud.sync.markDirty();
 }, 300);
 
@@ -762,143 +879,7 @@ function confirmAction(message, onYes){
   ]);
 }
 
-/* =========================================================================
-   VAULT — File System Access API + IndexedDB handle persistence
-   ========================================================================= */
-const VAULT_FILES = ["todos.md","projects.md","hours.md","shortcuts.md","news.md","calendar.md"];
-let dirHandle = null;
-
-function idb(){
-  return new Promise((res, rej) => {
-    const r = indexedDB.open("morning-brief", 1);
-    r.onupgradeneeded = () => r.result.createObjectStore("handles");
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
-}
-async function idbSet(k, v){ const db = await idb(); return new Promise((res, rej) => { const t = db.transaction("handles","readwrite"); t.objectStore("handles").put(v,k); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
-async function idbGet(k){ const db = await idb(); return new Promise((res, rej) => { const q = db.transaction("handles","readonly").objectStore("handles").get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
-
-async function connectVault(){
-  if(isDesktop){
-    try{
-      const info = await window.morningBrief.vault.pick();
-      if(!info) return;
-      state.vault.name = info.name;
-      state.vault.connected = true;
-      await vaultLoadAll();
-      save();
-      updateVaultBtn();
-      toast(`📓 Vault connected: ${info.name}`);
-    }catch(e){
-      toast("⚠️ Could not open that folder: " + (e.message || e.name));
-    }
-    return;
-  }
-  if(!window.showDirectoryPicker){
-    toast("⚠️ This browser can’t pick folders. Use Chrome or Edge, or export Markdown manually.");
-    return;
-  }
-  try{
-    dirHandle = await window.showDirectoryPicker({ id: "obsidian-vault", mode: "readwrite" });
-    await idbSet("dir", dirHandle);
-    state.vault.name = dirHandle.name;
-    state.vault.connected = true;
-    await vaultLoadAll();
-    save();
-    updateVaultBtn();
-    toast(`📓 Vault connected: ${dirHandle.name}`);
-  }catch(e){
-    if(e && e.name === "AbortError") return;
-    toast("⚠️ Could not open that folder: " + (e.message || e.name));
-  }
-}
-
-async function restoreVault(){
-  if(isDesktop){
-    let info = null;
-    try{ info = await window.morningBrief.vault.restore(); }catch(e){ /* ignore */ }
-    if(info){
-      state.vault.name = info.name;
-      state.vault.connected = true;
-      await vaultLoadAll();
-    } else {
-      state.vault.connected = false;
-    }
-    updateVaultBtn();
-    return;
-  }
-  if(!window.showDirectoryPicker) return;
-  try{
-    const h = await idbGet("dir");
-    if(!h) return;
-    const perm = await h.queryPermission({ mode: "readwrite" });
-    if(perm === "granted"){
-      dirHandle = h;
-      state.vault.name = h.name;
-      state.vault.connected = true;
-      await vaultLoadAll();
-      updateVaultBtn();
-    } else {
-      state.vault.name = h.name;
-      state.vault.connected = false;
-      updateVaultBtn();
-      toast("📓 Click Connect Vault to re-grant access to “" + h.name + "”.");
-    }
-  }catch(e){ /* ignore */ }
-}
-
-async function vaultRead(name){
-  if(isDesktop) return window.morningBrief.vault.read(name);
-  if(!dirHandle) return null;
-  try{
-    const fh = await dirHandle.getFileHandle(name);
-    const file = await fh.getFile();
-    return await file.text();
-  }catch(e){ return null; }
-}
-async function vaultWrite(name, text){
-  if(isDesktop) return window.morningBrief.vault.write(name, text);
-  if(!dirHandle) return;
-  try{
-    const fh = await dirHandle.getFileHandle(name, { create: true });
-    const w = await fh.createWritable();
-    await w.write(text);
-    await w.close();
-  }catch(e){ console.warn("Vault write failed for " + name, e); }
-}
-
-async function vaultLoadAll(){
-  const files = {};
-  for(const name of VAULT_FILES){
-    const txt = await vaultRead(name);
-    if(txt != null) files[name] = txt;
-  }
-  applyVault(files);
-}
-async function vaultWriteAll(){
-  if(!dirHandle && !isDesktop) return;
-  await vaultWrite("todos.md", serializeTodos());
-  await vaultWrite("projects.md", serializeProjects());
-  await vaultWrite("hours.md", serializeHours());
-  await vaultWrite("shortcuts.md", serializeShortcuts());
-  await vaultWrite("news.md", serializeNews());
-  await vaultWrite("calendar.md", serializeCalendar());
-}
-function updateVaultBtn(){
-  const b = $("#vaultBtn");
-  if(state.vault.connected && (dirHandle || isDesktop)){
-    b.textContent = "📓 " + state.vault.name;
-    b.classList.remove("btn-teal");
-    b.classList.add("btn-ghost");
-  } else {
-    b.textContent = "📓 Connect Vault";
-    b.classList.add("btn-teal");
-    b.classList.remove("btn-ghost");
-  }
-}
-
-/* ---------- Markdown serialization ---------- */
+/* ---------- Markdown serialization (used by the Data export) ---------- */
 function serializeTodos(){
   const lines = ["# To-Dos","","> Managed by Morning Brief. Edit freely — the dashboard reads this file on reload.",""];
   state.todos.forEach(t => {
@@ -912,31 +893,6 @@ function serializeTodos(){
   if(!state.todos.length) lines.push("_No tasks yet._");
   return lines.join("\n") + "\n";
 }
-function parseTodos(txt){
-  const out = [];
-  txt.split(/\r?\n/).forEach(line => {
-    const m = line.match(/^\s*-\s*\[([ xX])\]\s*(.+?)\s*$/);
-    if(!m) return;
-    let body = m[2];
-    let id = uid();
-    const idm = body.match(/\s*\^([a-z0-9]+)\s*$/i);
-    if(idm){ id = idm[1]; body = body.slice(0, idm.index).trim(); }
-    const prioM = body.match(/!([a-z]+)/i);
-    const dueM = body.match(/due:(\d{4}-\d{2}-\d{2})/i);
-    const projM = body.match(/@([\w-]+)/);
-    let text = body.replace(/—.*$/, "").replace(/(![a-z]+|due:\d{4}-\d{2}-\d{2}|@[\w-]+)/gi, "").trim();
-    if(!text) return;
-    out.push({
-      id, text,
-      done: m[1].toLowerCase() === "x",
-      prio: prioM ? prioM[1].toLowerCase() : "med",
-      due: dueM ? dueM[1] : "",
-      project: projM ? projM[1].replace(/-/g, " ") : "",
-      created: todayKey()
-    });
-  });
-  return out;
-}
 function serializeProjects(){
   const lines = ["# Projects",""];
   for(const [bucket, label] of [["work","Work"],["personal","Personal"]]){
@@ -949,39 +905,12 @@ function serializeProjects(){
       lines.push(`- progress: ${projectProgress(p)}`);
       if(p.due) lines.push(`- due: ${p.due}`);
       if(p.note) lines.push(`- note: ${p.note.replace(/\n/g, " ")}`);
+      if(p.desc) lines.push(`- desc: ${p.desc.replace(/\n/g, " ")}`);
       (Array.isArray(p.tasks) ? p.tasks : []).forEach(t => lines.push(`- [${t.done ? "x" : " "}] ${String(t.text || "").replace(/\n/g, " ")}`));
       lines.push("");
     });
   }
   return lines.join("\n");
-}
-function parseProjects(txt){
-  const result = { work: [], personal: [] };
-  let bucket = null, cur = null;
-  txt.split(/\r?\n/).forEach(raw => {
-    const line = raw.trim();
-    if(/^##\s+Work/i.test(line)){ bucket = "work"; cur = null; return; }
-    if(/^##\s+Personal/i.test(line)){ bucket = "personal"; cur = null; return; }
-    if(/^###\s+/.test(line) && bucket){
-      let name = line.replace(/^###\s+/, "");
-      let id = uid();
-      const idm = name.match(/\s*\^([a-z0-9]+)\s*$/i);
-      if(idm){ id = idm[1]; name = name.slice(0, idm.index).trim(); }
-      cur = { id, name, status: "active", progress: 0, due: "", note: "", tasks: [] };
-      result[bucket].push(cur);
-      return;
-    }
-    const task = line.match(/^-\s*\[([ xX])\]\s*(.+)$/);
-    if(cur && task){
-      cur.tasks.push({ id: uid(), text: task[2].trim(), done: task[1].toLowerCase() === "x" });
-      return;
-    }
-    if(cur && /^-\s+status:/i.test(line)) cur.status = line.split(":")[1].trim();
-    else if(cur && /^-\s+progress:/i.test(line)) cur.progress = clamp(parseInt(line.split(":")[1], 10) || 0, 0, 100);
-    else if(cur && /^-\s+due:/i.test(line)) cur.due = line.split(":")[1].trim();
-    else if(cur && /^-\s+note:/i.test(line)) cur.note = line.slice(line.indexOf(":") + 1).trim();
-  });
-  return result;
 }
 const HOURS_HEAD = "| Date | Client | Project | Hours | Notes |";
 const HOURS_RULE = "| --- | --- | --- | --- | --- |";
@@ -1008,43 +937,10 @@ function serializeHours(){
   }
   return lines.join("\n") + "\n";
 }
-function parseHours(txt){
-  const entries = [], history = [];
-  let weekStart = null, inHistory = false, curWeek = null;
-  txt.split(/\r?\n/).forEach(raw => {
-    const line = raw.trim();
-    let m = line.match(/^##\s+Week of\s+(\d{4}-\d{2}-\d{2})/i);
-    if(m){ weekStart = m[1]; inHistory = false; curWeek = null; return; }
-    if(/^##\s+History/i.test(line)){ inHistory = true; curWeek = null; return; }
-    m = line.match(/^###\s+Week of\s+(\d{4}-\d{2}-\d{2})/i);
-    if(m){ curWeek = { weekStart: m[1], entries: [] }; history.push(curWeek); return; }
-    const bucket = curWeek ? curWeek.entries : entries;
-    // New format: Date | Client | Project | Hours | Notes
-    let r = line.match(/^\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*([^|]*)\|\s*([^|]*)\|\s*([\d.]+)\s*\|\s*([^|]*)\|/);
-    if(r){
-      bucket.push({ id: uid(), date: r[1], client: r[2].trim(), project: r[3].trim(), minutes: Math.round((parseFloat(r[4]) || 0) * 60), note: r[5].trim() });
-      return;
-    }
-    // Legacy format: Date | Start | End | Minutes | Project | Notes
-    const old = line.match(/^\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*([\d:]*)\s*\|\s*([\d:]*)\s*\|\s*(\d+)\s*\|\s*([^|]*)\|\s*([^|]*)\|/);
-    if(old){
-      bucket.push({ id: uid(), date: old[1], client: "", project: old[5].trim(), minutes: parseInt(old[4],10) || 0, note: old[6].trim() });
-    }
-  });
-  return { weekStart, entries, history };
-}
 function serializeShortcuts(){
-  const lines = ["# Shortcuts","","> kind is one of: web, app, file.",""];
-  state.shortcuts.forEach(s => lines.push(`- [${s.kind}] ${s.icon} ${s.name} | ${s.target} | ${s.color || "#ff6b35"}`));
+  const lines = ["# Shortcuts","","> kind is one of: web, app, file. platform is one of: all, desktop, web.",""];
+  state.shortcuts.forEach(s => lines.push(`- [${s.kind}] ${s.icon} ${s.name} | ${s.target} | ${s.color || "#ff6b35"} | ${s.platform || (s.kind === "web" ? "all" : "desktop")}`));
   return lines.join("\n") + "\n";
-}
-function parseShortcuts(txt){
-  const out = [];
-  txt.split(/\r?\n/).forEach(line => {
-    const m = line.match(/^\s*-\s*\[(\w+)\]\s*(\S+)\s+(.+?)\s*\|\s*(.+?)\s*(?:\|\s*(#[0-9a-fA-F]{3,8}))?\s*$/);
-    if(m) out.push({ id: uid(), kind: m[1], icon: m[2], name: m[3], target: m[4], color: m[5] || "#ff6b35" });
-  });
-  return out;
 }
 function serializeNews(){
   const lines = ["# News Topics",""];
@@ -1056,26 +952,6 @@ function serializeNews(){
   lines.push("# Blocked Words","");
   state.news.blocklist.forEach(w => lines.push(`- ${w}`));
   return lines.join("\n") + "\n";
-}
-function parseNews(txt){
-  const topics = [];
-  let cur = null, inBlock = false;
-  txt.split(/\r?\n/).forEach(raw => {
-    const line = raw.trim();
-    if(/^#\s+Blocked/i.test(line)){ inBlock = true; cur = null; return; }
-    if(inBlock){ const m = line.match(/^-\s+(.+)/); if(m) parseNews._block.push(m[1].trim()); return; }
-    if(/^##\s+/.test(line)){
-      let name = line.replace(/^##\s+/, ""); let id = uid();
-      const idm = name.match(/\s*\^([a-z0-9]+)\s*$/i);
-      if(idm){ id = idm[1]; name = name.slice(0, idm.index).trim(); }
-      cur = { id, name, feeds: [], items: [], lastFetch: null };
-      topics.push(cur);
-      return;
-    }
-    const f = line.match(/^-\s+feed:\s*(\S+)/i);
-    if(f && cur) cur.feeds.push(f[1]);
-  });
-  return topics;
 }
 function serializeCalendar(){
   const lines = ["# Calendar","","> Google Calendar events are synced from your secret iCal URLs and cached here. Manual events are kept.",""];
@@ -1094,67 +970,6 @@ function serializeCalendar(){
   if(state.calendar.lastSync) lines.push(`last-sync: ${state.calendar.lastSync}`);
   return lines.join("\n") + "\n";
 }
-function parseCalendar(txt){
-  const manual = [], calendars = [];
-  let url = "";
-  txt.split(/\r?\n/).forEach(line => {
-    const u = line.match(/^ical-url:\s*(\S+)/i);
-    if(u) url = u[1];
-    const c = line.match(/^\s*-\s*cal:\s*(.+)$/i);
-    if(c){
-      const parts = c[1].split("|").map(s => s.trim());
-      if(parts[0] && parts[1]) calendars.push({ id: uid(), name: parts[0], url: parts[1], color: parts[2] || "", enabled: (parts[3] || "on").toLowerCase() !== "off" });
-      return;
-    }
-    const m = line.match(/^\s*-\s*(\d{4}-\d{2}-\d{2})\s+(\S+)-(\S+)\s*\|\s*(.+?)\s*(?:\|\s*(.+?))?\s*(?:\^([a-z0-9]+))?\s*$/i);
-    if(m){
-      const clean = line.replace(/^\s*-\s*/, "").replace(/\s*\^[a-z0-9]+\s*$/i, "");
-      const parts = clean.split("|").map(s => s.trim());
-      const [date, times] = parts[0].split(/\s+/);
-      const [start, end] = (times || "").split("-");
-      manual.push({ id: uid(), date, start, end, title: parts[1] || "Event", location: parts[2] || "" });
-    }
-  });
-  return { manual, calendars, url };
-}
-
-/* ---------- Apply parsed vault files into state ---------- */
-parseNews._block = [];
-function applyVault(files){
-  if(files["todos.md"] != null){
-    const t = parseTodos(files["todos.md"]);
-    if(t.length || /-\s*\[[ xX]\]/.test(files["todos.md"])) state.todos = t;
-  }
-  if(files["projects.md"] != null){
-    const p = parseProjects(files["projects.md"]);
-    if(p.work.length || p.personal.length) { state.work = p.work; state.personal = p.personal; }
-  }
-  if(files["hours.md"] != null){
-    const h = normalizeHours(parseHours(files["hours.md"]));
-    state.hours = { ...h, active: state.hours.active };
-  }
-  if(files["shortcuts.md"] != null){
-    const s = parseShortcuts(files["shortcuts.md"]);
-    if(s.length) state.shortcuts = s;
-  }
-  if(files["news.md"] != null){
-    parseNews._block = [];
-    const topics = parseNews(files["news.md"]);
-    if(topics.length) state.news.topics = topics.map(t => {
-      const old = state.news.topics.find(o => o.id === t.id || o.name === t.name);
-      return old ? { ...t, items: old.items || [], lastFetch: old.lastFetch } : t;
-    });
-    if(parseNews._block.length) state.news.blocklist = parseNews._block;
-  }
-  if(files["calendar.md"] != null){
-    const c = parseCalendar(files["calendar.md"]);
-    if(c.calendars.length) state.calendar.calendars = c.calendars;
-    else if(c.url && !(state.calendar.calendars || []).length) state.calendar.calendars = [{ id: uid(), name: "Google Calendar", url: c.url, color: "#0fa3a3", enabled: true }];
-    if(c.manual.length) state.calendar.manual = c.manual;
-  }
-  renderAll();
-}
-
 /* =========================================================================
    CALENDAR
    ========================================================================= */
@@ -1567,9 +1382,20 @@ function logTimeManual(){
    SHORTCUTS
    ========================================================================= */
 const ICON_CHOICES = ["🎬","🪄","🔮","🐙","▶️","🧊","🤗","🎞️","🎨","🖌️","🧩","💡","🚀","🎧","🛠️","📦","🧠","🖥️","📷","🌈","⚡","🦾","🕹️","📐"];
+// Can this host launch local apps/protocols/files? Desktop app always; a
+// browser only when the local companion server is running. The hosted PWA can't.
+function canLaunchLocal(){ return isDesktop || serverOnline; }
+function shortcutPlatform(s){ return s.platform || (s.kind === "web" ? "all" : "desktop"); }
+function shortcutVisibleHere(s){
+  const p = shortcutPlatform(s);
+  if(p === "all") return true;
+  return p === "desktop" ? canLaunchLocal() : !canLaunchLocal();
+}
 function renderShortcuts(){
   const grid = $("#shortcutGrid");
-  grid.innerHTML = state.shortcuts.map(s => `
+  const shown = state.shortcuts.filter(shortcutVisibleHere);
+  const hidden = state.shortcuts.length - shown.length;
+  grid.innerHTML = shown.map(s => `
     <div class="shortcut" data-id="${s.id}">
       <button class="shortcut-link" type="button" data-open="${s.id}" aria-label="Open ${esc(s.name)}" style="background:none;border:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:inherit;font:inherit">
         <span class="tile" style="--sc:${esc(s.color || "#ff6b35")}" aria-hidden="true">${esc(s.icon)}</span>
@@ -1582,6 +1408,8 @@ function renderShortcuts(){
       <span class="tile" aria-hidden="true">＋</span>
       <span class="sc-name">Add</span>
     </button>`;
+  const note = $("#scNote");
+  if(note) note.textContent = hidden ? hidden + " desktop-only shortcut" + (hidden > 1 ? "s" : "") + " hidden on this device." : "";
 }
 async function openShortcut(id){
   const s = state.shortcuts.find(x => x.id === id);
@@ -1617,7 +1445,7 @@ async function openShortcut(id){
   toast("Your browser blocked the " + (s.kind === "file" ? "local file" : "app") + " link. Run Start Dashboard.bat for desktop launching.");
 }
 function shortcutDialog(existing){
-  const s = existing || { id: uid(), icon: "🚀", name: "", target: "", kind: "web", color: "#ff6b35" };
+  const s = existing || { id: uid(), icon: "🚀", name: "", target: "", kind: "web", color: "#ff6b35", platform: "all" };
   openModal(existing ? "Edit shortcut" : "Add a shortcut", `
     <div class="field"><label for="scName">Name</label><input id="scName" type="text" value="${esc(s.name)}" placeholder="Blender…"></div>
     <div class="field"><label for="scTarget">Target</label><input id="scTarget" type="text" value="${esc(s.target)}" placeholder="https://… or blender:// or file:///C:/…"></div>
@@ -1631,13 +1459,21 @@ function shortcutDialog(existing){
       </div>
       <div class="field"><label for="scColor">Tile color</label><input id="scColor" type="text" value="${esc(s.color)}" placeholder="#ff6b35"></div>
     </div>
+    <div class="field"><label for="scPlatform">Show on</label>
+      <select id="scPlatform">
+        <option value="all"${shortcutPlatform(s)==="all"?" selected":""}>Both desktop and mobile</option>
+        <option value="desktop"${shortcutPlatform(s)==="desktop"?" selected":""}>Desktop only (can launch apps/files)</option>
+        <option value="web"${shortcutPlatform(s)==="web"?" selected":""}>Web &amp; mobile only</option>
+      </select>
+      <p class="hint">Desktop-only tiles are hidden on phones/tablets and the hosted web app.</p>
+    </div>
     <div class="field"><label>Icon</label>
       <div style="display:flex;flex-wrap:wrap;gap:6px" id="iconPicker">
         ${ICON_CHOICES.map(i => `<button type="button" class="btn btn-sm icon-choice" data-icon="${i}" aria-pressed="${i===s.icon}" style="padding:6px 9px;font-size:1.1rem">${i}</button>`).join("")}
       </div>
       <p class="hint">Or paste any emoji: <input id="scIcon" type="text" value="${esc(s.icon)}" style="width:70px;display:inline-block;margin-top:6px" maxlength="4" aria-label="Custom icon emoji"></p>
     </div>
-    <p class="hint">Web links open in a new tab. Apps, custom protocols (like <code>blender://</code>) and local files or folders (<code>file:///C:/…</code>) launch through the local server — run <code>Start Dashboard.bat</code> and the 🖥️ Desktop badge appears when it's ready.</p>
+    <p class="hint">Web links open in a new tab. Apps, custom protocols (like <code>blender://</code>) and local files or folders (<code>file:///C:/…</code>) launch through the local server — run <code>Start Dashboard.bat</code> or the desktop app.</p>
   `, [
     ...(existing ? [{ label: "Delete", className: "btn-berry", onClick: () => { closeModal(); confirmAction("Delete “" + s.name + "”?", () => { state.shortcuts = state.shortcuts.filter(x => x.id !== s.id); save(); renderShortcuts(); }); } }] : []),
     { label: "Cancel", className: "btn-ghost" },
@@ -1645,7 +1481,7 @@ function shortcutDialog(existing){
         const name = $("#scName").value.trim();
         const target = $("#scTarget").value.trim();
         if(!name || !target){ toast("Name and target are required."); return; }
-        const obj = { id: s.id, name, target, kind: $("#scKind").value, color: $("#scColor").value.trim() || "#ff6b35", icon: $("#scIcon").value.trim() || "🚀" };
+        const obj = { id: s.id, name, target, kind: $("#scKind").value, color: $("#scColor").value.trim() || "#ff6b35", icon: $("#scIcon").value.trim() || "🚀", platform: $("#scPlatform").value };
         const i = state.shortcuts.findIndex(x => x.id === s.id);
         if(i >= 0) state.shortcuts[i] = obj; else state.shortcuts.push(obj);
         closeModal(); save(); renderShortcuts(); toast(existing ? "Shortcut updated." : "Shortcut added.");
@@ -1821,7 +1657,7 @@ function renderProjectTasks(bucket, p){
     </div>`;
 }
 function projectDialog(bucket, existing){
-  const p = existing || { id: uid(), name: "", status: "active", progress: 0, due: "", note: "", tasks: [] };
+  const p = existing || { id: uid(), name: "", status: "active", progress: 0, due: "", note: "", desc: "", tasks: [] };
   let dialogTasks = (Array.isArray(p.tasks) ? p.tasks : []).map(t => ({ id: t.id || uid(), text: t.text || "", done: !!t.done }));
 
   function renderDialogTasks(){
@@ -1847,7 +1683,7 @@ function projectDialog(bucket, existing){
     <div class="field"><label for="prNote">Notes</label><textarea id="prNote" placeholder="Where it stands, next step…">${esc(p.note)}</textarea></div>
     <div class="field">
       <label for="prDesc">Describe the project <span class="hint" style="display:inline">(for AI)</span></label>
-      <textarea id="prDesc" placeholder="e.g. A 90-second animatic for the Cascade campaign: storyboard, animatic, sound pass, final render…"></textarea>
+      <textarea id="prDesc" placeholder="e.g. A 90-second animatic for the Cascade campaign: storyboard, animatic, sound pass, final render…">${esc(p.desc || "")}</textarea>
       <div class="row" style="margin-top:8px;align-items:center">
         <button class="btn btn-sm btn-teal" type="button" id="prGen">✨ Generate to-dos</button>
         <span class="hint" id="prGenStatus"></span>
@@ -1865,7 +1701,7 @@ function projectDialog(bucket, existing){
         const name = $("#prName").value.trim();
         if(!name){ toast("Give the project a name."); return; }
         const tasks = dialogTasks.filter(t => t.text.trim()).map(t => ({ id: t.id, text: t.text.trim(), done: !!t.done }));
-        const obj = { id: p.id, name, status: $("#prStatus").value, due: $("#prDue").value, progress: p.progress || 0, note: $("#prNote").value.trim(), tasks };
+        const obj = { id: p.id, name, status: $("#prStatus").value, due: $("#prDue").value, progress: p.progress || 0, note: $("#prNote").value.trim(), desc: $("#prDesc").value.trim(), tasks };
         const i = state[bucket].findIndex(x => x.id === p.id);
         if(i >= 0) state[bucket][i] = obj; else state[bucket].push(obj);
         closeModal(); save(); renderAll(); toast(existing ? "Project updated." : "Project created.");
@@ -2114,7 +1950,7 @@ function calendarRowHTML(cal){
 function openSetup(tab){
   const body = `
     <div class="modal-tabs" role="tablist">
-      ${[["general","General"],["calendar","Calendar"],["news","News"],["ai","AI"],["vault","Vault &amp; Obsidian"],["data","Data"]].map(([id,label]) =>
+      ${[["general","General"],["calendar","Calendar"],["news","News"],["ai","AI"],["data","Data"]].map(([id,label]) =>
         `<button class="tab" type="button" role="tab" data-stab="${id}" aria-selected="${(tab||"general")===id}">${label}</button>`).join("")}
     </div>
     <div id="setupPane"></div>`;
@@ -2122,7 +1958,14 @@ function openSetup(tab){
   const panes = {
     general: () => `
       <div class="field"><label for="setName">Your name</label><input id="setName" type="text" value="${esc(state.profile.name)}" placeholder="e.g. Chris"></div>
-      <p class="hint">Used to greet you in the header.</p>`,
+      <p class="hint">Used to greet you in the header.</p>
+      <div class="field" style="margin-top:14px"><label for="setTheme">Theme</label>
+        <select id="setTheme">
+          <option value="default"${(state.settings.theme || "default") === "default" ? " selected" : ""}>Default (colorful)</option>
+          <option value="retro"${state.settings.theme === "retro" ? " selected" : ""}>Retro Mac (90s)</option>
+        </select>
+      </div>
+      <p class="hint">Applies instantly. “Retro Mac” restyles the panels as classic Mac OS windows.</p>`,
     calendar: () => `
       <p class="hint" style="margin-bottom:10px">Add one entry per calendar — e.g. <strong>Work</strong> and <strong>Personal</strong>. Each syncs from its own Google “Secret address in iCal format”. Give them different colours to tell them apart.</p>
       <div id="calList">${(state.calendar.calendars || []).map(calendarRowHTML).join("") || '<p class="hint">No calendars yet.</p>'}</div>
@@ -2149,16 +1992,8 @@ function openSetup(tab){
       <p class="hint">Use <code>auto</code> to let Gab pick a model, or a model id like <code>arya</code>.</p>
       <button class="btn btn-sm btn-teal" type="button" id="setAiTest">Test connection</button>
       <span class="hint" id="setAiStatus" style="margin-left:8px"></span>`,
-    vault: () => `
-      <p>Point this at a folder inside your Obsidian vault. The dashboard reads and writes six Markdown files there, so your notes stay plain text and Obsidian stays the source of truth.</p>
-      <ul class="hint" style="margin:10px 0 14px;padding-left:18px">
-        ${VAULT_FILES.map(f => `<li><code>${f}</code></li>`).join("")}
-      </ul>
-      <button class="btn btn-sm btn-teal" type="button" id="setVault">${(dirHandle || state.vault.connected) ? "Reconnect folder…" : "Choose vault folder…"}</button>
-      <button class="btn btn-sm" type="button" id="setReload">Reload from vault</button>
-      <p class="hint" style="margin-top:12px">${state.vault.connected ? "Connected to <strong>" + esc(state.vault.name) + "</strong>." : "Not connected. Files will be created on first save."} ${isDesktop ? "This folder is remembered between launches — no re-authorization needed." : "Needs Chrome or Edge; the folder picker is a browser feature."}</p>`,
     data: () => `
-      <p class="hint" style="margin-bottom:12px">Everything also lives in this browser’s local storage, so the dashboard works even without a vault.</p>
+      <p class="hint" style="margin-bottom:12px">Your dashboard is saved in this browser and, when signed in, synced to your account.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-sm" type="button" id="setExportJson">⤓ Export JSON backup</button>
         <button class="btn btn-sm" type="button" id="setExportMd">⤓ Export Markdown files</button>
@@ -2168,7 +2003,10 @@ function openSetup(tab){
   function show(id){
     $("#setupPane").innerHTML = panes[id]();
     $$("[data-stab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.stab === id)));
-    if(id === "general"){ $("#setName").addEventListener("input", e => { state.profile.name = e.target.value.trim(); save(); renderGreeting(); }); }
+    if(id === "general"){
+      $("#setName").addEventListener("input", e => { state.profile.name = e.target.value.trim(); save(); renderGreeting(); });
+      $("#setTheme").addEventListener("change", e => { state.settings.theme = e.target.value; save(); applyTheme(state.settings.theme); });
+    }
     if(id === "calendar"){
       if(!Array.isArray(state.calendar.calendars)) state.calendar.calendars = [];
       $("#calAddRow").addEventListener("click", () => {
@@ -2209,20 +2047,16 @@ function openSetup(tab){
         }catch(e){ s.textContent = "⚠️ " + (e.message || e); }
       });
     }
-    if(id === "vault"){
-      $("#setVault").addEventListener("click", async () => { closeModal(); await connectVault(); });
-      $("#setReload").addEventListener("click", async () => { await vaultLoadAll(); toast("Reloaded from vault."); });
-    }
     if(id === "data"){
       $("#setExportJson").addEventListener("click", () => download("morning-brief-backup.json", JSON.stringify(state, null, 2), "application/json"));
       $("#setExportMd").addEventListener("click", () => {
-        const bundle = VAULT_FILES.map(f => `# ${f}\n\n` + ({
+        const bundle = ["todos.md","projects.md","hours.md","shortcuts.md","news.md","calendar.md"].map(f => `# ${f}\n\n` + ({
           "todos.md": serializeTodos, "projects.md": serializeProjects, "hours.md": serializeHours,
           "shortcuts.md": serializeShortcuts, "news.md": serializeNews, "calendar.md": serializeCalendar
         }[f])()).join("\n\n---\n\n");
         download("morning-brief-markdown.md", bundle, "text/markdown");
       });
-      $("#setReset").addEventListener("click", () => { closeModal(); confirmAction("Reset all dashboard data? This clears browser storage but does not touch your vault files.", () => { localStorage.removeItem(STORE_KEY); location.reload(); }); });
+      $("#setReset").addEventListener("click", () => { closeModal(); confirmAction("Reset all dashboard data on this device?", () => { localStorage.removeItem(STORE_KEY); location.reload(); }); });
     }
   }
   $$("[data-stab]").forEach(b => b.addEventListener("click", () => show(b.dataset.stab)));
@@ -2254,7 +2088,6 @@ function renderAll(){
   renderProjects("personal", "#personalList");
   renderTodos();
   renderNews();
-  updateVaultBtn();
 }
 function tickClock(){
   const now = new Date();
@@ -2264,7 +2097,6 @@ function tickClock(){
 
 /* ---------- wire up events ---------- */
 function wire(){
-  $("#vaultBtn").addEventListener("click", connectVault);
   $("#setupBtn").addEventListener("click", () => openSetup("general"));
   $("#calSync").addEventListener("click", syncCalendar);
   $("#calAdd").addEventListener("click", addManualEvent);
@@ -2389,6 +2221,10 @@ function boot(){
   ["work","personal"].forEach(b => (state[b] || []).forEach(p => { if(!Array.isArray(p.tasks)) p.tasks = []; }));
   if(!state.settings.ai) state.settings.ai = { key: "", model: "auto" };
   if(!state.ui.openProjects) state.ui.openProjects = {};
+  // Migration: theme setting + per-shortcut platform (app/file → desktop).
+  if(!state.settings.theme) state.settings.theme = "default";
+  state.shortcuts = (state.shortcuts || []).map(s => ({ platform: (s.kind === "web" ? "all" : "desktop"), ...s }));
+  applyTheme(state.settings.theme);
 
   wire();
   renderAll();
@@ -2396,8 +2232,6 @@ function boot(){
   setInterval(tickClock, 15000);
   setInterval(tickTimer, 1000);
   setInterval(() => { renderHours(); renderCalendar(); }, 60000);
-  restoreVault();
-
   if(rolledOver){
     save();
     setTimeout(() => toast("📅 New week — last week’s hours were archived to History."), 1200);
@@ -2444,11 +2278,9 @@ function boot(){
   }
 
   // Gentle first-run nudge
-  if(!state.vault.connected && !localStorage.getItem("morning-brief.seen")){
+  if(!localStorage.getItem("morning-brief.seen")){
     localStorage.setItem("morning-brief.seen", "1");
-    setTimeout(() => toast(isDesktop
-      ? "👋 New here? Click Setup to add your name and Google Calendar link, or Connect Vault to sync your notes."
-      : "👋 New here? Click Setup to add your name and Google Calendar link."), 900);
+    setTimeout(() => toast("👋 New here? Click Setup to add your name and Google Calendar link."), 900);
   }
 }
 document.addEventListener("DOMContentLoaded", boot);
