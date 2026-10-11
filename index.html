@@ -1278,15 +1278,16 @@ function fmtTime(d){
 function getProxies(){
   let list = (state.settings && Array.isArray(state.settings.proxies)) ? state.settings.proxies.filter(Boolean) : [];
   if(!list.length) list = DEFAULT_PROXIES.slice();
-  if(isCloud && window.mbCloud && window.mbCloud.proxyPrefix){
+  // Only use the cloud relay when there is no local server (hosted PWA).
+  if(!serverOnline && isCloud && window.mbCloud && window.mbCloud.proxyPrefix){
     list = list.filter(p => p !== LOCAL_PROXY);
     if(!list.includes(window.mbCloud.proxyPrefix)) list = [window.mbCloud.proxyPrefix, ...list];
   }
   return list;
 }
-// The single "active" proxy prefix (used by news); cloud function in cloud mode.
+// The single "active" proxy prefix (used by news). Local server wins if present.
 function activeProxyPrefix(){
-  if(isCloud && window.mbCloud && window.mbCloud.proxyPrefix) return window.mbCloud.proxyPrefix;
+  if(!serverOnline && isCloud && window.mbCloud && window.mbCloud.proxyPrefix) return window.mbCloud.proxyPrefix;
   return state.settings.proxy;
 }
 // Adds Supabase auth headers only for our own Edge Function calls.
@@ -1662,7 +1663,9 @@ function shortcutDialog(existing){
 async function aiChat(request){
   const ai = state.settings.ai || {};
   if(!ai.key) throw new Error("Add your Gab API key in Setup → AI.");
-  if(isCloud && window.mbCloud && window.mbCloud.aiChat){
+  // Prefer the local server when it's up (desktop app / Start Dashboard.bat);
+  // fall back to the cloud relay only when there is no local server (hosted PWA).
+  if(!serverOnline && isCloud && window.mbCloud && window.mbCloud.aiChat){
     return window.mbCloud.aiChat(request, ai.key);
   }
   if(!serverOnline) throw new Error("AI needs the local server — run the desktop app or Start Dashboard.bat.");
