@@ -1,0 +1,44 @@
+{
+  "name": "morning-brief",
+  "productName": "Morning Brief",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A colorful, self-contained morning dashboard with calendar, news, vault sync and a desktop launchpad.",
+  "author": "Morning Brief",
+  "license": "MIT",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable",
+    "serve": "node serve.js"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.morningbrief.app",
+    "productName": "Morning Brief",
+    "files": [
+      "electron/**",
+      "lib/**",
+      "index.html",
+      "mb-config.js",
+      "mb-cloud.js",
+      "README.md",
+      "package.json"
+    ],
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
+    "portable": {
+      "artifactName": "MorningBrief-portable-${version}.exe"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+# Dependencies and build output (regenerated, not source)
+node_modules/
+dist/
+
+# Tool scratch / unrelated files
+.cascade/
+body1.txt
+
+# OS junk
+.DS_Store
+Thumbs.db
+*.log

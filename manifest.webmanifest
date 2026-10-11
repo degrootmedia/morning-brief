@@ -1,0 +1,16 @@
+{
+  "name": "Morning Brief",
+  "short_name": "Morning Brief",
+  "description": "Your daily dashboard: calendar, work hours, projects, to-dos, news and a launchpad.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fff3e2",
+  "theme_color": "#1b1b2f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

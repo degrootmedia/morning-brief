@@ -1,0 +1,2454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morning Brief — Daily Dashboard</title>
+<meta name="description" content="A colorful daily dashboard: calendar, work hours, projects, to-dos, curated tech news and app shortcuts, synced to Markdown files in your Obsidian vault.">
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Karla:ital,wght@0,400..700;1,400..600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Morning Brief — daily dashboard
+   Design tokens
+   ============================================================ */
+:root{
+  --ink:#1b1b2f;
+  --ink-soft:#4a4a63;
+  --paper:#fff3e2;
+  --paper-2:#ffe9cd;
+  --card:#fffaf0;
+  --tangerine:#ff6b35;
+  --teal:#0fa3a3;
+  --teal-dark:#0b7a7a;
+  --marigold:#ffc145;
+  --berry:#d7263d;
+  --lime:#8ac926;
+  --line:var(--ink);
+  --radius:18px;
+  --radius-sm:12px;
+  --shadow:6px 6px 0 var(--ink);
+  --shadow-sm:3px 3px 0 var(--ink);
+  --shadow-press:2px 2px 0 var(--ink);
+  --gap:16px;
+  --font-display:"Bricolage Grotesque",Georgia,serif;
+  --font-body:"Karla",system-ui,-apple-system,Segoe UI,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-body);
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 12% -8%, #ffe1b3 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #ffd0bd 0%, transparent 50%),
+    linear-gradient(180deg,#fff8ec 0%, var(--paper) 100%);
+  background-attachment:fixed;
+  min-height:100vh;
+  line-height:1.5;
+  padding:0 0 48px;
+}
+h1,h2,h3,h4{font-family:var(--font-display);line-height:1.12;margin:0;letter-spacing:-.01em}
+p{margin:0}
+button{font:inherit;color:inherit}
+a{color:var(--teal-dark)}
+:focus-visible{outline:3px solid var(--berry);outline-offset:2px;border-radius:6px}
+[hidden]{display:none !important}
+::selection{background:var(--marigold);color:var(--ink)}
+
+.skip{
+  position:absolute;left:-9999px;top:0;z-index:100;
+  background:var(--marigold);border:3px solid var(--ink);border-radius:10px;
+  padding:10px 16px;font-weight:700;box-shadow:var(--shadow-sm);
+}
+.skip:focus{left:12px;top:12px}
+
+.wrap{max-width:1360px;margin:0 auto;padding:0 clamp(12px,3vw,28px)}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  display:grid;
+  grid-template-columns:minmax(0,1.4fr) auto auto;
+  align-items:center;
+  gap:18px;
+  padding:22px clamp(12px,3vw,28px) 18px;
+  max-width:1360px;margin:0 auto;
+}
+.brand{display:flex;align-items:center;gap:16px;min-width:0}
+.brand h1{font-size:clamp(1.5rem,3.4vw,2.4rem);font-weight:800;text-wrap:balance}
+.eyebrow{
+  font-family:var(--font-display);font-weight:700;text-transform:uppercase;
+  letter-spacing:.16em;font-size:.72rem;color:var(--tangerine);
+}
+.brand-sub{color:var(--ink-soft);font-size:.95rem;margin-top:2px}
+
+/* Mascot */
+.mascot{width:76px;height:76px;flex:0 0 auto;filter:drop-shadow(4px 4px 0 rgba(27,27,47,.85))}
+.mascot .eye{transform-origin:center;animation:blink 5.5s infinite}
+.mascot .eye.b{animation-delay:.18s}
+.mascot .antenna-tip{transform-box:fill-box;transform-origin:center;animation:pulse 3.2s ease-in-out infinite}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
+/* Discrete + compositable: no SVG geometry animation (which forces layout each
+   frame). Holds still most of the cycle so the screen — and a Moonlight stream —
+   can idle between brief bursts. */
+@keyframes pulse{0%,84%,100%{opacity:1;transform:scale(1)}92%{opacity:.6;transform:scale(1.4)}}
+/* Freeze the mascot while the user is idle (e.g. just watching a streamed
+   screen) and when the OS asks for reduced motion, so the framebuffer — and a
+   remote-desktop/Moonlight capture — can go completely idle. */
+.motion-idle .mascot .eye,
+.motion-idle .mascot .antenna-tip{animation-play-state:paused}
+@media (prefers-reduced-motion: reduce){
+  .mascot .eye,.mascot .antenna-tip{animation:none}
+  .progress > span{transition:none}
+}
+
+.clockbox{
+  text-align:right;
+  background:var(--ink);color:var(--paper);
+  border:3px solid var(--ink);border-radius:var(--radius);
+  padding:8px 18px;box-shadow:var(--shadow-sm);
+  min-width:150px;
+}
+.clock{font-family:var(--font-display);font-weight:800;font-size:clamp(1.5rem,3vw,2rem);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.dateline{font-size:.82rem;color:#ffd9a8;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+
+.topactions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+
+/* ---------- Buttons ---------- */
+.btn{
+  font-family:var(--font-display);font-weight:700;
+  border:3px solid var(--ink);border-radius:999px;
+  background:var(--card);padding:9px 16px;cursor:pointer;
+  box-shadow:var(--shadow-sm);
+  transition:transform .12s ease,box-shadow .12s ease,background .12s ease;
+  display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+}
+.btn:hover{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--ink)}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.btn-teal{background:var(--teal);color:#fff}
+.btn-marigold{background:var(--marigold)}
+.btn-tangerine{background:var(--tangerine);color:#fff}
+.btn-berry{background:var(--berry);color:#fff}
+.btn-ghost{background:transparent}
+.btn-sm{padding:5px 11px;font-size:.82rem;border-width:2px;box-shadow:2px 2px 0 var(--ink)}
+.btn-icon{padding:6px 10px;font-size:1rem;line-height:1}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none;box-shadow:var(--shadow-sm)}
+
+/* ---------- Status / toast ---------- */
+.status{
+  max-width:1360px;margin:0 auto 6px;padding:0 clamp(12px,3vw,28px);
+}
+.toast{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--ink);color:var(--paper);border-radius:999px;
+  padding:8px 16px;font-weight:700;font-size:.9rem;
+  border:3px solid var(--ink);box-shadow:var(--shadow-sm);
+  animation:pop .25s ease;
+}
+@keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ---------- Bento grid ---------- */
+main{max-width:1360px;margin:0 auto;padding:0 clamp(12px,3vw,28px)}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--gap)}
+.panel{
+  background:var(--card);
+  border:3px solid var(--ink);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px 16px 18px;
+  min-width:0;
+  display:flex;flex-direction:column;
+  position:relative;
+}
+.panel-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.panel-head h2{font-size:1.18rem;font-weight:800;display:flex;align-items:center;gap:9px}
+.panel-head .spacer{flex:1 1 auto}
+.chip{
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  background:var(--paper-2);border:2px solid var(--ink);border-radius:999px;padding:3px 10px;
+}
+.icon-badge{
+  width:34px;height:34px;flex:0 0 auto;display:grid;place-items:center;
+  border:3px solid var(--ink);border-radius:11px;font-size:1.05rem;
+  box-shadow:2px 2px 0 var(--ink);
+  background:radial-gradient(120% 120% at 30% 20%,#ffffffaa,transparent 60%),var(--tile,var(--marigold));
+}
+
+/* Panel placement */
+.p-cal{grid-column:span 4;--tile:var(--teal)}
+.p-hours{grid-column:span 4;--tile:var(--marigold)}
+.p-shortcuts{grid-column:span 4;--tile:var(--tangerine)}
+.p-work{grid-column:span 6;--tile:var(--berry)}
+.p-personal{grid-column:span 6;--tile:var(--lime)}
+.p-todos{grid-column:span 5;--tile:var(--marigold)}
+.p-news{grid-column:span 7;--tile:var(--teal)}
+
+/* ---------- Calendar ---------- */
+.next-meeting{
+  background:linear-gradient(135deg,var(--teal) 0%,var(--teal-dark) 100%);
+  color:#fff;border:3px solid var(--ink);border-radius:var(--radius-sm);
+  padding:12px 14px;margin-bottom:12px;box-shadow:var(--shadow-sm);
+}
+.next-meeting .nm-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;opacity:.9}
+.next-meeting .nm-title{font-family:var(--font-display);font-weight:800;font-size:1.15rem;margin:2px 0}
+.next-meeting .nm-time{font-weight:700;font-variant-numeric:tabular-nums}
+.next-meeting.is-clear{background:linear-gradient(135deg,#7fd1c8,#0fa3a3)}
+.event-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;overflow:auto;max-height:280px}
+.event{
+  display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:start;
+  border:2px solid var(--ink);border-radius:var(--radius-sm);padding:8px 10px;background:var(--paper);
+}
+.event .ev-time{font-weight:800;font-size:.82rem;font-variant-numeric:tabular-nums;line-height:1.3}
+.event .ev-title{font-weight:700;font-size:.95rem}
+.event .ev-loc{font-size:.8rem;color:var(--ink-soft)}
+.event.now{border-color:var(--berry);background:#ffe2e6;box-shadow:2px 2px 0 var(--berry)}
+.event.all-day .ev-time{color:var(--teal-dark)}
+.event .ev-cal-tag{
+  display:inline-block;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+  color:#fff;background:var(--cal,var(--teal));border:1px solid var(--ink);border-radius:999px;
+  padding:0 6px;vertical-align:middle;
+}
+.empty{color:var(--ink-soft);font-size:.9rem;font-style:italic;padding:6px 2px}
+/* calendar editor rows (Setup) */
+.cal-row{
+  display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;
+  border:2px solid var(--ink);border-radius:var(--radius-sm);padding:8px;background:var(--paper);margin-bottom:8px;
+}
+.cal-row .cal-name{font-weight:700}
+.cal-row .cal-url{grid-column:1/-1;font-size:.82rem}
+.cal-row .cal-color{padding:0;width:34px;height:34px;border:2px solid var(--ink);border-radius:8px;background:none;cursor:pointer}
+
+/* ---------- Hours ---------- */
+.hours-top{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.hours-big{font-family:var(--font-display);font-weight:800;font-size:2.2rem;font-variant-numeric:tabular-nums}
+.hours-label{font-weight:700;color:var(--ink-soft)}
+.hours-week{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+.timer{font-variant-numeric:tabular-nums;font-weight:800}
+.timer.live{color:var(--berry)}
+.hours-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px}
+.ts-wrap{overflow-x:auto;margin-top:2px}
+table.ts{width:100%;border-collapse:collapse;font-size:.72rem;font-variant-numeric:tabular-nums}
+table.ts th,table.ts td{border:2px solid var(--ink);padding:3px 4px;text-align:right;white-space:nowrap}
+table.ts thead th{background:var(--marigold);font-weight:800}
+table.ts td.ts-proj,table.ts th:first-child{text-align:left;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+table.ts td.ts-empty{color:#c9b79e}
+table.ts td.ts-total,table.ts tr.ts-grand td{font-weight:800}
+table.ts tr.ts-grand td{background:var(--paper-2)}
+table.ts tr.ts-clientrow td{background:var(--paper-2);text-align:left;font-weight:800;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
+table.ts tr.ts-clientrow .ts-client-total{float:right;font-variant-numeric:tabular-nums}
+
+/* ---------- Shortcuts ---------- */
+.shortcut-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:12px;
+}
+.shortcut{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:transparent;border:none;cursor:pointer;padding:4px;border-radius:14px;
+  text-decoration:none;color:var(--ink);
+}
+.shortcut .tile{
+  width:58px;height:58px;display:grid;place-items:center;font-size:1.7rem;
+  border:3px solid var(--ink);border-radius:16px;
+  box-shadow:inset 0 3px 0 #ffffffb0,inset 0 -8px 14px #00000022,4px 4px 0 var(--ink);
+  background:radial-gradient(120% 120% at 32% 22%,#ffffffcc,transparent 58%),var(--sc,var(--tangerine));
+  transition:transform .14s ease,box-shadow .14s ease;
+}
+.shortcut:hover .tile{transform:translate(1px,1px) rotate(-2deg);box-shadow:inset 0 3px 0 #ffffffb0,inset 0 -8px 14px #00000022,3px 3px 0 var(--ink)}
+.shortcut:active .tile{transform:translate(3px,3px);box-shadow:inset 0 3px 0 #ffffffb0,inset 0 -8px 14px #00000022,0 0 0 var(--ink)}
+.shortcut .sc-name{font-size:.74rem;font-weight:700;text-align:center;line-height:1.2;max-width:100%;overflow-wrap:anywhere}
+.shortcut .sc-edit{
+  position:absolute;top:-4px;right:-2px;opacity:0;
+  width:22px;height:22px;border-radius:50%;border:2px solid var(--ink);
+  background:var(--card);font-size:.7rem;line-height:1;display:grid;place-items:center;
+  cursor:pointer;transition:opacity .12s ease;
+}
+.shortcut:hover .sc-edit,.shortcut:focus-within .sc-edit{opacity:1}
+.shortcut-add .tile{background:repeating-linear-gradient(45deg,#fff5e6,#fff5e6 6px,#ffe6c7 6px,#ffe6c7 12px)}
+
+/* ---------- Projects ---------- */
+.project-list{display:flex;flex-direction:column;gap:10px;overflow:auto;max-height:320px}
+.project{
+  border:2px solid var(--ink);border-radius:var(--radius-sm);padding:10px 12px;background:var(--paper);
+}
+.project-top{display:flex;align-items:center;gap:8px}
+.project-top .p-name{font-weight:800;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.project .p-meta{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--ink-soft);margin-top:4px;flex-wrap:wrap}
+.status-pill{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:2px solid var(--ink);border-radius:999px;padding:1px 8px}
+.status-active{background:var(--lime)}
+.status-blocked{background:var(--berry);color:#fff}
+.status-idea{background:var(--marigold)}
+.status-done{background:#cfd6e4}
+.progress{height:12px;border:2px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden;margin-top:8px}
+.progress > span{display:block;height:100%;background:var(--berry);transition:width .4s ease}
+.p-personal .progress > span{background:var(--lime)}
+.p-toggle{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;background:none;border:none;padding:0;cursor:pointer;color:inherit;font:inherit;text-align:left}
+.p-toggle .p-caret{font-size:.8rem;color:var(--ink-soft);flex:0 0 auto}
+.project-tasks{margin-top:10px;border-top:2px dashed var(--ink);padding-top:10px}
+.ptask-list{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:6px}
+.ptask{display:flex;align-items:center;gap:7px}
+.ptask input[type=checkbox]{width:18px;height:18px;flex:0 0 auto;accent-color:var(--teal)}
+.ptask-text{flex:1 1 auto;min-width:0;border:2px solid transparent;background:transparent;border-radius:8px;padding:3px 6px;font:inherit;color:inherit}
+.ptask-text:hover{border-color:var(--paper-2)}
+.ptask-text:focus{border-color:var(--ink);background:#fff;outline:none}
+.ptask-text.done{text-decoration:line-through;color:var(--ink-soft)}
+.ptask-del{padding:2px 8px}
+.ptask-add{display:flex;gap:6px}
+.ptask-add input{flex:1 1 auto;min-width:0}
+.ptask-edit{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:6px}
+.ptask-edit-row{display:flex;align-items:center;gap:7px}
+.ptask-edit-row input[type=checkbox]{width:18px;height:18px;flex:0 0 auto;accent-color:var(--teal)}
+.ptask-edit-row .ptask-text{flex:1 1 auto;min-width:0;border:2px solid var(--ink);background:#fff;border-radius:8px;padding:5px 8px;font:inherit;color:inherit}
+
+/* ---------- Todos ---------- */
+.todo-form{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.todo-form input[type=text]{flex:1 1 140px;min-width:0}
+.todo-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;overflow:auto;max-height:340px}
+.todo{
+  display:flex;align-items:flex-start;gap:10px;
+  border:2px solid var(--ink);border-radius:var(--radius-sm);padding:8px 10px;background:var(--paper);
+}
+.todo.done{opacity:.6}
+.todo.done .t-text{text-decoration:line-through}
+.todo input[type=checkbox]{width:20px;height:20px;margin-top:1px;accent-color:var(--teal);flex:0 0 auto;cursor:pointer}
+.todo .t-body{flex:1 1 auto;min-width:0}
+.todo .t-text{font-weight:600;overflow-wrap:anywhere}
+.todo .t-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:3px;font-size:.72rem;font-weight:700}
+.tag{border:2px solid var(--ink);border-radius:999px;padding:0 7px;background:#fff}
+.tag.prio-high{background:var(--berry);color:#fff}
+.tag.prio-med{background:var(--marigold)}
+.tag.prio-low{background:#d7e7c6}
+.tag.overdue{background:var(--berry);color:#fff}
+.todo .t-del{flex:0 0 auto}
+
+/* ---------- News ---------- */
+.news-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.tab{
+  border:2px solid var(--ink);border-radius:999px;background:var(--card);
+  padding:4px 12px;font-size:.8rem;font-weight:700;cursor:pointer;
+}
+.tab[aria-selected=true]{background:var(--ink);color:var(--paper)}
+.news-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;overflow:auto;max-height:420px}
+.news-item{border:2px solid var(--ink);border-radius:var(--radius-sm);padding:9px 11px;background:var(--paper);display:flex;gap:10px;align-items:flex-start}
+.news-item .n-thumb{width:56px;height:56px;flex:0 0 auto;border:2px solid var(--ink);border-radius:10px;object-fit:cover;background:#fff}
+.news-item .n-body{min-width:0;flex:1 1 auto}
+.news-item .n-title{font-weight:700;font-size:.94rem;display:block;overflow-wrap:anywhere}
+.news-item .n-title:hover{color:var(--teal-dark)}
+.news-item .n-src{font-size:.72rem;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+.news-item .n-sum{font-size:.82rem;color:var(--ink-soft);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ---------- Forms ---------- */
+label{font-weight:700;font-size:.84rem;display:block;margin-bottom:3px}
+input[type=text],input[type=url],input[type=date],input[type=time],input[type=number],select,textarea{
+  font:inherit;color:var(--ink);background:#fff;
+  border:2px solid var(--ink);border-radius:10px;padding:8px 10px;width:100%;
+}
+textarea{resize:vertical;min-height:70px}
+.field{margin-bottom:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row > .field{flex:1 1 150px}
+.hint{font-size:.78rem;color:var(--ink-soft);margin-top:3px}
+.hint code{background:var(--paper-2);padding:1px 5px;border-radius:5px;font-size:.85em}
+
+/* ---------- Modal ---------- */
+.modal{
+  position:fixed;inset:0;z-index:60;display:grid;place-items:center;
+  background:rgba(27,27,47,.55);padding:18px;
+}
+.modal-card{
+  background:var(--card);border:3px solid var(--ink);border-radius:var(--radius);
+  box-shadow:var(--shadow);width:min(620px,100%);max-height:88vh;overflow:auto;padding:20px;
+}
+.modal-card h3{font-size:1.3rem;margin-bottom:12px}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap}
+.modal-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.section-title{font-family:var(--font-display);font-weight:800;font-size:1rem;margin:16px 0 8px;padding-bottom:4px;border-bottom:2px dashed var(--ink)}
+
+/* ---------- Footer ---------- */
+.foot{max-width:1360px;margin:26px auto 0;padding:0 clamp(12px,3vw,28px);color:var(--ink-soft);font-size:.82rem}
+.foot code{background:var(--paper-2);padding:1px 5px;border-radius:5px}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1080px){
+  .p-cal,.p-hours,.p-shortcuts{grid-column:span 6}
+  .p-todos,.p-news,.p-work,.p-personal{grid-column:span 12}
+}
+@media (max-width:760px){
+  .topbar{grid-template-columns:1fr;gap:12px}
+  .clockbox{text-align:left;min-width:0}
+  .topactions{justify-content:flex-start}
+  .p-cal,.p-hours,.p-shortcuts,.p-work,.p-personal,.p-todos,.p-news{grid-column:span 12}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="mascot" viewBox="0 0 100 100" role="img" aria-label="Pip, the dashboard robot mascot">
+      <line x1="50" y1="18" x2="50" y2="6" stroke="#1b1b2f" stroke-width="4" stroke-linecap="round"/>
+      <circle class="antenna-tip" cx="50" cy="6" r="6" fill="#ff6b35" stroke="#1b1b2f" stroke-width="3"/>
+      <rect x="16" y="24" width="68" height="56" rx="16" fill="#ffc145" stroke="#1b1b2f" stroke-width="4"/>
+      <rect x="26" y="36" width="48" height="30" rx="12" fill="#fffaf0" stroke="#1b1b2f" stroke-width="4"/>
+      <ellipse class="eye" cx="39" cy="51" rx="6" ry="7" fill="#1b1b2f"/>
+      <ellipse class="eye b" cx="61" cy="51" rx="6" ry="7" fill="#1b1b2f"/>
+      <path d="M42 60 Q50 66 58 60" fill="none" stroke="#1b1b2f" stroke-width="3" stroke-linecap="round"/>
+      <rect x="8" y="44" width="10" height="18" rx="5" fill="#0fa3a3" stroke="#1b1b2f" stroke-width="3"/>
+      <rect x="82" y="44" width="10" height="18" rx="5" fill="#0fa3a3" stroke="#1b1b2f" stroke-width="3"/>
+    </svg>
+    <div>
+      <p class="eyebrow">Morning Brief</p>
+      <h1 id="greeting">Good morning</h1>
+      <p class="brand-sub" id="brandSub">Here’s your day at a glance.</p>
+    </div>
+  </div>
+  <div class="clockbox">
+    <p class="clock" id="clock">--:--</p>
+    <p class="dateline" id="dateline">—</p>
+  </div>
+  <div class="topactions">
+    <button class="btn btn-ghost" id="authBtn" type="button" style="display:none">Sign in</button>
+    <button class="btn btn-teal" id="vaultBtn" type="button">📓 Connect Vault</button>
+    <button class="btn btn-marigold" id="setupBtn" type="button">⚙️ Setup</button>
+  </div>
+</header>
+
+<div class="status" id="status" role="status" aria-live="polite"></div>
+
+<main id="main" tabindex="-1">
+  <div class="grid">
+
+    <!-- Calendar -->
+    <section class="panel p-cal" aria-labelledby="calH">
+      <div class="panel-head">
+        <h2 id="calH"><span class="icon-badge" aria-hidden="true">📅</span> Today’s Calendar</h2>
+        <span class="spacer"></span>
+        <button class="btn btn-sm" id="calSync" type="button">Sync</button>
+      </div>
+      <div class="next-meeting is-clear" id="nextMeeting">
+        <p class="nm-label">Next up</p>
+        <p class="nm-title" id="nmTitle">Nothing scheduled</p>
+        <p class="nm-time" id="nmTime">Enjoy the open runway.</p>
+      </div>
+      <ul class="event-list" id="eventList"></ul>
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn-sm" id="calAdd" type="button">＋ Add event</button>
+        <button class="btn btn-sm" id="calImport" type="button">⤓ Import .ics</button>
+        <input type="file" id="icsFile" accept=".ics,text/calendar" hidden>
+      </div>
+    </section>
+
+    <!-- Work hours -->
+    <section class="panel p-hours" aria-labelledby="hoursH">
+      <div class="panel-head">
+        <h2 id="hoursH"><span class="icon-badge" aria-hidden="true">⏱️</span> Work Hours</h2>
+        <span class="spacer"></span>
+        <span class="hours-week" id="hoursWeek">—</span>
+      </div>
+      <div class="hours-top">
+        <span class="hours-big" id="hoursWeekTotal">0</span>
+        <span class="hours-label">h this week</span>
+        <span class="hours-label" id="hoursToday">0h today</span>
+      </div>
+      <p class="hours-label" id="timerLine">No timer running.</p>
+      <div class="hours-actions">
+        <button class="btn btn-sm btn-tangerine" id="clockToggle" type="button">▶ Start timer</button>
+        <button class="btn btn-sm" id="hoursLog" type="button">＋ Log time</button>
+      </div>
+      <div class="ts-wrap" id="timesheetWrap"></div>
+    </section>
+
+    <!-- Shortcuts -->
+    <section class="panel p-shortcuts" aria-labelledby="scH">
+      <div class="panel-head">
+        <h2 id="scH"><span class="icon-badge" aria-hidden="true">🚀</span> Launchpad</h2>
+        <span class="spacer"></span>
+        <button class="btn btn-sm" id="scAdd" type="button">＋</button>
+      </div>
+      <div class="shortcut-grid" id="shortcutGrid"></div>
+    </section>
+
+    <!-- Work projects -->
+    <section class="panel p-work" aria-labelledby="workH">
+      <div class="panel-head">
+        <h2 id="workH"><span class="icon-badge" aria-hidden="true">🏗️</span> Work Projects</h2>
+        <span class="spacer"></span>
+        <button class="btn btn-sm" id="workAdd" type="button">＋ Add</button>
+      </div>
+      <div class="project-list" id="workList"></div>
+    </section>
+
+    <!-- Personal projects -->
+    <section class="panel p-personal" aria-labelledby="persH">
+      <div class="panel-head">
+        <h2 id="persH"><span class="icon-badge" aria-hidden="true">🎨</span> Personal Projects</h2>
+        <span class="spacer"></span>
+        <button class="btn btn-sm" id="persAdd" type="button">＋ Add</button>
+      </div>
+      <div class="project-list" id="personalList"></div>
+    </section>
+
+    <!-- Todos -->
+    <section class="panel p-todos" aria-labelledby="todoH">
+      <div class="panel-head">
+        <h2 id="todoH"><span class="icon-badge" aria-hidden="true">✅</span> To-Dos</h2>
+        <span class="spacer"></span>
+        <span class="chip" id="todoCount">0 open</span>
+      </div>
+      <form class="todo-form" id="todoForm">
+        <input type="text" id="todoText" placeholder="Add a task…" aria-label="New to-do" autocomplete="off">
+        <select id="todoPrio" aria-label="Priority" style="width:auto">
+          <option value="med">Normal</option>
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+        <button class="btn btn-sm btn-tangerine" type="submit">Add</button>
+      </form>
+      <ul class="todo-list" id="todoList"></ul>
+    </section>
+
+    <!-- News -->
+    <section class="panel p-news" aria-labelledby="newsH">
+      <div class="panel-head">
+        <h2 id="newsH"><span class="icon-badge" aria-hidden="true">📡</span> Signal Feed</h2>
+        <span class="spacer"></span>
+        <button class="btn btn-sm" id="newsRefresh" type="button">↻ Refresh</button>
+        <button class="btn btn-sm" id="newsSettings" type="button">Topics</button>
+      </div>
+      <div class="news-tabs" id="newsTabs" role="tablist" aria-label="News topics"></div>
+      <ul class="news-list" id="newsList"></ul>
+    </section>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <p>Markdown-first dashboard — state lives in <code>todos.md</code>, <code>projects.md</code>, <code>hours.md</code>, <code>shortcuts.md</code>, <code>news.md</code> and <code>calendar.md</code> inside your vault. Everything else is cached in this browser.</p>
+</footer>
+
+<!-- Modal -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h3 id="modalTitle">Title</h3>
+    <div id="modalBody"></div>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<script src="mb-config.js"></script>
+<script src="mb-cloud.js"></script>
+<script>
+"use strict";
+/* =========================================================================
+   Morning Brief — daily dashboard
+   Single-file app. No build step. Works from file:// in Chrome/Edge.
+   ========================================================================= */
+
+/* ---------- tiny helpers ---------- */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const pad = n => String(n).padStart(2, "0");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const todayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const minutesLabel = m => `${Math.floor(m/60)}h ${pad(Math.round(m%60))}m`;
+const parseDateKey = k => { const [y,m,d] = String(k).split("-").map(Number); return new Date(y, (m||1)-1, d||1); };
+const addDays = (k, n) => { const d = parseDateKey(k); d.setDate(d.getDate()+n); return todayKey(d); };
+// Monday of the given date's week (local).
+function weekStartKey(d = new Date()){
+  const x = new Date(d); x.setHours(0,0,0,0);
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+  return todayKey(x);
+}
+function weekDays(startKey){
+  const names = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+  return names.map((label, i) => { const key = addDays(startKey, i); return { key, label, date: parseDateKey(key) }; });
+}
+const fmtHours = m => String(Math.round((m/60)*100)/100);
+const fmtDate = k => parseDateKey(k).toLocaleDateString([], { month: "short", day: "numeric" });
+
+function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+function download(name, text, type = "text/plain"){
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ---------- state ---------- */
+const STORE_KEY = "morning-brief.state.v1";
+const DEFAULT_TOPICS = [
+  { id: "ai", name: "AI", feeds: [
+    "https://www.marktechpost.com/feed/",
+    "https://openai.com/blog/rss.xml",
+    "https://blog.google/technology/ai/rss/"
+  ]},
+  { id: "robotics", name: "Robotics", feeds: [
+    "https://spectrum.ieee.org/feeds/topic/robotics.rss",
+    "https://www.therobotreport.com/feed/"
+  ]},
+  { id: "motion", name: "Motion Graphics", feeds: [
+    "https://motionographer.com/feed/"
+  ]},
+  { id: "blender", name: "Blender", feeds: [
+    "https://www.blendernation.com/feed/",
+    "https://blog.blender.org/feed/"
+  ]},
+  { id: "addons", name: "Blender Addons", feeds: [
+    "https://www.blendernation.com/tag/add-ons/feed/"
+  ]},
+  { id: "3d", name: "3D Tools", feeds: [
+    "https://80.lv/feed"
+  ]},
+  { id: "models", name: "Image & Video Models", feeds: [
+    "https://huggingface.co/blog/feed.xml",
+    "https://replicate.com/blog/rss"
+  ]}
+];
+const POLITICS_BLOCKLIST = ["politics","political","election","campaign","senate","congress","democrat","republican","gop","parliament","president","prime minister","white house","trump","biden","harris","vote","ballot","immigration","border policy","war in","gaza","ukraine","israel","nato","geopolit"];
+
+const DEFAULT_SHORTCUTS = [
+  { id: uid(), icon: "🎬", name: "Blender",      target: "blender://",                        kind: "app",  color: "#ff6b35" },
+  { id: uid(), icon: "🪄", name: "Bforartists",  target: "bforartists://",                     kind: "app",  color: "#0fa3a3" },
+  { id: uid(), icon: "🔮", name: "Obsidian",     target: "obsidian://open",                    kind: "app",  color: "#ffc145" },
+  { id: uid(), icon: "🐙", name: "GitHub",       target: "https://github.com",                 kind: "web",  color: "#8ac926" },
+  { id: uid(), icon: "▶️", name: "YouTube",      target: "https://www.youtube.com",            kind: "web",  color: "#d7263d" },
+  { id: uid(), icon: "🧊", name: "Sketchfab",    target: "https://sketchfab.com",              kind: "web",  color: "#0fa3a3" },
+  { id: uid(), icon: "🤗", name: "Hugging Face", target: "https://huggingface.co",             kind: "web",  color: "#ffc145" },
+  { id: uid(), icon: "🎞️", name: "After Effects",target: "aftereffects://",                    kind: "app",  color: "#ff6b35" }
+];
+
+// The local companion server (serve.js / Start Dashboard.bat) proxies requests
+// on your own machine, so no third party and no CORS. Tried first; if the
+// server isn't running the fetch fails fast and the public proxies below are
+// tried instead. These are free and can go down or rate-limit at any time.
+const LOCAL_PROXY = "http://localhost:8787/proxy?url=";
+const DEFAULT_PROXIES = [
+  LOCAL_PROXY,
+  "https://api.allorigins.win/raw?url=",
+  "https://api.allorigins.win/get?url=",
+  "https://api.codetabs.com/v1/proxy?quest=",
+  "https://corsproxy.io/?url="
+];
+
+// Base URL of the local companion server. When the dashboard is served by it
+// we reuse the same origin; otherwise we fall back to the default port.
+const LOCAL_SERVER = "http://localhost:8787";
+function localServerBase(){
+  if(/^https?:$/.test(location.protocol) && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) return location.origin;
+  return LOCAL_SERVER;
+}
+
+// True when running inside the Electron desktop app (preload exposes this).
+const isDesktop = !!(window.morningBrief && window.morningBrief.version);
+// True when the cloud module is present (hosted PWA / signed-in builds).
+const isCloud = !!(window.mbCloud && window.mbCloud.version);
+let serverOnline = false;
+async function pingServer(){
+  try{
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 1500);
+    const r = await fetch(localServerBase() + "/health", { signal: ctrl.signal, cache: "no-store" });
+    clearTimeout(t);
+    serverOnline = !!r.ok;
+  }catch(e){ serverOnline = false; }
+  return serverOnline;
+}
+
+function defaultState(){
+  return {
+    version: 1,
+    profile: { name: "" },
+    settings: { proxy: LOCAL_PROXY, proxies: DEFAULT_PROXIES.slice(), blockPolitics: true, ai: { key: "", model: "auto" } },
+    calendar: { calendars: [], events: [], manual: [], lastSync: null },
+    work: [],
+    personal: [],
+    todos: [],
+    hours: { weekStart: null, entries: [], active: null, history: [] },
+    shortcuts: DEFAULT_SHORTCUTS.map(s => ({ ...s })),
+    news: { topics: DEFAULT_TOPICS.map(t => ({ ...t, feeds: [...t.feeds], items: [], lastFetch: null })), blocklist: [...POLITICS_BLOCKLIST], activeTopic: "ai" },
+    vault: { name: "", connected: false },
+    ui: { todoFilter: "open", openProjects: {} }
+  };
+}
+
+let state;
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    return deepMerge(defaultState(), parsed);
+  }catch(e){
+    console.warn("Could not read saved state, starting fresh.", e);
+    return defaultState();
+  }
+}
+function deepMerge(base, over){
+  if(Array.isArray(over)) return over;
+  if(typeof over !== "object" || over === null) return over === undefined ? base : over;
+  const out = Array.isArray(base) ? [] : { ...base };
+  for(const k of Object.keys(over)){
+    out[k] = (k in base) ? deepMerge(base[k], over[k]) : over[k];
+  }
+  return out;
+}
+const save = debounce(() => {
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch(e){ toast("⚠️ Could not save to browser storage."); }
+  vaultWriteAll();
+  if(isCloud && window.mbCloud) window.mbCloud.sync.markDirty();
+}, 300);
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg){
+  const el = $("#status");
+  el.innerHTML = `<span class="toast">${esc(msg)}</span>`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.innerHTML = ""; }, 3200);
+}
+
+/* ---------- modal ---------- */
+let lastFocus = null;
+function openModal(title, bodyHTML, actions){
+  lastFocus = document.activeElement;
+  $("#modalTitle").textContent = title;
+  $("#modalBody").innerHTML = bodyHTML;
+  const act = $("#modalActions");
+  act.innerHTML = "";
+  (actions || []).forEach(a => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn " + (a.className || "");
+    b.textContent = a.label;
+    b.addEventListener("click", () => a.onClick ? a.onClick() : closeModal());
+    act.appendChild(b);
+  });
+  $("#modal").hidden = false;
+  const first = $("#modal").querySelector("input,select,textarea,button");
+  if(first) first.focus();
+  document.addEventListener("keydown", modalKeys);
+}
+function closeModal(){
+  $("#modal").hidden = true;
+  document.removeEventListener("keydown", modalKeys);
+  if(lastFocus && lastFocus.isConnected) lastFocus.focus();
+}
+function modalKeys(e){
+  if(e.key === "Escape"){ closeModal(); return; }
+  if(e.key !== "Tab") return;
+  const f = $$("#modal button, #modal input, #modal select, #modal textarea, #modal a[href]").filter(el => !el.disabled);
+  if(!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+}
+$("#modal").addEventListener("mousedown", e => { if(e.target.id === "modal") closeModal(); });
+
+function confirmAction(message, onYes){
+  openModal("Are you sure?", `<p>${esc(message)}</p>`, [
+    { label: "Cancel", className: "btn-ghost" },
+    { label: "Yes, do it", className: "btn-berry", onClick: () => { closeModal(); onYes(); } }
+  ]);
+}
+
+/* =========================================================================
+   VAULT — File System Access API + IndexedDB handle persistence
+   ========================================================================= */
+const VAULT_FILES = ["todos.md","projects.md","hours.md","shortcuts.md","news.md","calendar.md"];
+let dirHandle = null;
+
+function idb(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("morning-brief", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("handles");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbSet(k, v){ const db = await idb(); return new Promise((res, rej) => { const t = db.transaction("handles","readwrite"); t.objectStore("handles").put(v,k); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+async function idbGet(k){ const db = await idb(); return new Promise((res, rej) => { const q = db.transaction("handles","readonly").objectStore("handles").get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+
+async function connectVault(){
+  if(isDesktop){
+    try{
+      const info = await window.morningBrief.vault.pick();
+      if(!info) return;
+      state.vault.name = info.name;
+      state.vault.connected = true;
+      await vaultLoadAll();
+      save();
+      updateVaultBtn();
+      toast(`📓 Vault connected: ${info.name}`);
+    }catch(e){
+      toast("⚠️ Could not open that folder: " + (e.message || e.name));
+    }
+    return;
+  }
+  if(!window.showDirectoryPicker){
+    toast("⚠️ This browser can’t pick folders. Use Chrome or Edge, or export Markdown manually.");
+    return;
+  }
+  try{
+    dirHandle = await window.showDirectoryPicker({ id: "obsidian-vault", mode: "readwrite" });
+    await idbSet("dir", dirHandle);
+    state.vault.name = dirHandle.name;
+    state.vault.connected = true;
+    await vaultLoadAll();
+    save();
+    updateVaultBtn();
+    toast(`📓 Vault connected: ${dirHandle.name}`);
+  }catch(e){
+    if(e && e.name === "AbortError") return;
+    toast("⚠️ Could not open that folder: " + (e.message || e.name));
+  }
+}
+
+async function restoreVault(){
+  if(isDesktop){
+    let info = null;
+    try{ info = await window.morningBrief.vault.restore(); }catch(e){ /* ignore */ }
+    if(info){
+      state.vault.name = info.name;
+      state.vault.connected = true;
+      await vaultLoadAll();
+    } else {
+      state.vault.connected = false;
+    }
+    updateVaultBtn();
+    return;
+  }
+  if(!window.showDirectoryPicker) return;
+  try{
+    const h = await idbGet("dir");
+    if(!h) return;
+    const perm = await h.queryPermission({ mode: "readwrite" });
+    if(perm === "granted"){
+      dirHandle = h;
+      state.vault.name = h.name;
+      state.vault.connected = true;
+      await vaultLoadAll();
+      updateVaultBtn();
+    } else {
+      state.vault.name = h.name;
+      state.vault.connected = false;
+      updateVaultBtn();
+      toast("📓 Click Connect Vault to re-grant access to “" + h.name + "”.");
+    }
+  }catch(e){ /* ignore */ }
+}
+
+async function vaultRead(name){
+  if(isDesktop) return window.morningBrief.vault.read(name);
+  if(!dirHandle) return null;
+  try{
+    const fh = await dirHandle.getFileHandle(name);
+    const file = await fh.getFile();
+    return await file.text();
+  }catch(e){ return null; }
+}
+async function vaultWrite(name, text){
+  if(isDesktop) return window.morningBrief.vault.write(name, text);
+  if(!dirHandle) return;
+  try{
+    const fh = await dirHandle.getFileHandle(name, { create: true });
+    const w = await fh.createWritable();
+    await w.write(text);
+    await w.close();
+  }catch(e){ console.warn("Vault write failed for " + name, e); }
+}
+
+async function vaultLoadAll(){
+  const files = {};
+  for(const name of VAULT_FILES){
+    const txt = await vaultRead(name);
+    if(txt != null) files[name] = txt;
+  }
+  applyVault(files);
+}
+async function vaultWriteAll(){
+  if(!dirHandle && !isDesktop) return;
+  await vaultWrite("todos.md", serializeTodos());
+  await vaultWrite("projects.md", serializeProjects());
+  await vaultWrite("hours.md", serializeHours());
+  await vaultWrite("shortcuts.md", serializeShortcuts());
+  await vaultWrite("news.md", serializeNews());
+  await vaultWrite("calendar.md", serializeCalendar());
+}
+function updateVaultBtn(){
+  const b = $("#vaultBtn");
+  if(state.vault.connected && (dirHandle || isDesktop)){
+    b.textContent = "📓 " + state.vault.name;
+    b.classList.remove("btn-teal");
+    b.classList.add("btn-ghost");
+  } else {
+    b.textContent = "📓 Connect Vault";
+    b.classList.add("btn-teal");
+    b.classList.remove("btn-ghost");
+  }
+}
+
+/* ---------- Markdown serialization ---------- */
+function serializeTodos(){
+  const lines = ["# To-Dos","","> Managed by Morning Brief. Edit freely — the dashboard reads this file on reload.",""];
+  state.todos.forEach(t => {
+    const box = t.done ? "x" : " ";
+    const bits = [];
+    if(t.prio && t.prio !== "med") bits.push("!" + t.prio);
+    if(t.due) bits.push("due:" + t.due);
+    if(t.project) bits.push("@" + t.project.replace(/\s+/g, "-"));
+    lines.push(`- [${box}] ${t.text}${bits.length ? " — " + bits.join(" ") : ""} ^${t.id}`);
+  });
+  if(!state.todos.length) lines.push("_No tasks yet._");
+  return lines.join("\n") + "\n";
+}
+function parseTodos(txt){
+  const out = [];
+  txt.split(/\r?\n/).forEach(line => {
+    const m = line.match(/^\s*-\s*\[([ xX])\]\s*(.+?)\s*$/);
+    if(!m) return;
+    let body = m[2];
+    let id = uid();
+    const idm = body.match(/\s*\^([a-z0-9]+)\s*$/i);
+    if(idm){ id = idm[1]; body = body.slice(0, idm.index).trim(); }
+    const prioM = body.match(/!([a-z]+)/i);
+    const dueM = body.match(/due:(\d{4}-\d{2}-\d{2})/i);
+    const projM = body.match(/@([\w-]+)/);
+    let text = body.replace(/—.*$/, "").replace(/(![a-z]+|due:\d{4}-\d{2}-\d{2}|@[\w-]+)/gi, "").trim();
+    if(!text) return;
+    out.push({
+      id, text,
+      done: m[1].toLowerCase() === "x",
+      prio: prioM ? prioM[1].toLowerCase() : "med",
+      due: dueM ? dueM[1] : "",
+      project: projM ? projM[1].replace(/-/g, " ") : "",
+      created: todayKey()
+    });
+  });
+  return out;
+}
+function serializeProjects(){
+  const lines = ["# Projects",""];
+  for(const [bucket, label] of [["work","Work"],["personal","Personal"]]){
+    lines.push(`## ${label}`,"");
+    const list = state[bucket];
+    if(!list.length){ lines.push("_None yet._",""); continue; }
+    list.forEach(p => {
+      lines.push(`### ${p.name} ^${p.id}`);
+      lines.push(`- status: ${p.status || "active"}`);
+      lines.push(`- progress: ${projectProgress(p)}`);
+      if(p.due) lines.push(`- due: ${p.due}`);
+      if(p.note) lines.push(`- note: ${p.note.replace(/\n/g, " ")}`);
+      (Array.isArray(p.tasks) ? p.tasks : []).forEach(t => lines.push(`- [${t.done ? "x" : " "}] ${String(t.text || "").replace(/\n/g, " ")}`));
+      lines.push("");
+    });
+  }
+  return lines.join("\n");
+}
+function parseProjects(txt){
+  const result = { work: [], personal: [] };
+  let bucket = null, cur = null;
+  txt.split(/\r?\n/).forEach(raw => {
+    const line = raw.trim();
+    if(/^##\s+Work/i.test(line)){ bucket = "work"; cur = null; return; }
+    if(/^##\s+Personal/i.test(line)){ bucket = "personal"; cur = null; return; }
+    if(/^###\s+/.test(line) && bucket){
+      let name = line.replace(/^###\s+/, "");
+      let id = uid();
+      const idm = name.match(/\s*\^([a-z0-9]+)\s*$/i);
+      if(idm){ id = idm[1]; name = name.slice(0, idm.index).trim(); }
+      cur = { id, name, status: "active", progress: 0, due: "", note: "", tasks: [] };
+      result[bucket].push(cur);
+      return;
+    }
+    const task = line.match(/^-\s*\[([ xX])\]\s*(.+)$/);
+    if(cur && task){
+      cur.tasks.push({ id: uid(), text: task[2].trim(), done: task[1].toLowerCase() === "x" });
+      return;
+    }
+    if(cur && /^-\s+status:/i.test(line)) cur.status = line.split(":")[1].trim();
+    else if(cur && /^-\s+progress:/i.test(line)) cur.progress = clamp(parseInt(line.split(":")[1], 10) || 0, 0, 100);
+    else if(cur && /^-\s+due:/i.test(line)) cur.due = line.split(":")[1].trim();
+    else if(cur && /^-\s+note:/i.test(line)) cur.note = line.slice(line.indexOf(":") + 1).trim();
+  });
+  return result;
+}
+const HOURS_HEAD = "| Date | Client | Project | Hours | Notes |";
+const HOURS_RULE = "| --- | --- | --- | --- | --- |";
+const hoursCell = v => String(v == null ? "" : v).replace(/\|/g, "/").trim();
+function hoursRow(e){
+  return `| ${e.date} | ${hoursCell(e.client)} | ${hoursCell(e.project)} | ${fmtHours(e.minutes)} | ${hoursCell(e.note)} |`;
+}
+function serializeHours(){
+  const lines = ["# Work Hours","","> Weekly timesheet. Entries are grouped by client and project; finished weeks are kept under History.",""];
+  lines.push(`## Week of ${state.hours.weekStart || weekStartKey()}`, "");
+  lines.push(HOURS_HEAD, HOURS_RULE);
+  state.hours.entries.slice()
+    .sort((a,b) => (a.date + a.client + a.project).localeCompare(b.date + b.client + b.project))
+    .forEach(e => lines.push(hoursRow(e)));
+  if(state.hours.history.length){
+    lines.push("", "## History", "");
+    state.hours.history.forEach(w => {
+      lines.push(`### Week of ${w.weekStart}`, "", HOURS_HEAD, HOURS_RULE);
+      w.entries.slice()
+        .sort((a,b) => (a.date + a.client + a.project).localeCompare(b.date + b.client + b.project))
+        .forEach(e => lines.push(hoursRow(e)));
+      lines.push("");
+    });
+  }
+  return lines.join("\n") + "\n";
+}
+function parseHours(txt){
+  const entries = [], history = [];
+  let weekStart = null, inHistory = false, curWeek = null;
+  txt.split(/\r?\n/).forEach(raw => {
+    const line = raw.trim();
+    let m = line.match(/^##\s+Week of\s+(\d{4}-\d{2}-\d{2})/i);
+    if(m){ weekStart = m[1]; inHistory = false; curWeek = null; return; }
+    if(/^##\s+History/i.test(line)){ inHistory = true; curWeek = null; return; }
+    m = line.match(/^###\s+Week of\s+(\d{4}-\d{2}-\d{2})/i);
+    if(m){ curWeek = { weekStart: m[1], entries: [] }; history.push(curWeek); return; }
+    const bucket = curWeek ? curWeek.entries : entries;
+    // New format: Date | Client | Project | Hours | Notes
+    let r = line.match(/^\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*([^|]*)\|\s*([^|]*)\|\s*([\d.]+)\s*\|\s*([^|]*)\|/);
+    if(r){
+      bucket.push({ id: uid(), date: r[1], client: r[2].trim(), project: r[3].trim(), minutes: Math.round((parseFloat(r[4]) || 0) * 60), note: r[5].trim() });
+      return;
+    }
+    // Legacy format: Date | Start | End | Minutes | Project | Notes
+    const old = line.match(/^\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*([\d:]*)\s*\|\s*([\d:]*)\s*\|\s*(\d+)\s*\|\s*([^|]*)\|\s*([^|]*)\|/);
+    if(old){
+      bucket.push({ id: uid(), date: old[1], client: "", project: old[5].trim(), minutes: parseInt(old[4],10) || 0, note: old[6].trim() });
+    }
+  });
+  return { weekStart, entries, history };
+}
+function serializeShortcuts(){
+  const lines = ["# Shortcuts","","> kind is one of: web, app, file.",""];
+  state.shortcuts.forEach(s => lines.push(`- [${s.kind}] ${s.icon} ${s.name} | ${s.target} | ${s.color || "#ff6b35"}`));
+  return lines.join("\n") + "\n";
+}
+function parseShortcuts(txt){
+  const out = [];
+  txt.split(/\r?\n/).forEach(line => {
+    const m = line.match(/^\s*-\s*\[(\w+)\]\s*(\S+)\s+(.+?)\s*\|\s*(.+?)\s*(?:\|\s*(#[0-9a-fA-F]{3,8}))?\s*$/);
+    if(m) out.push({ id: uid(), kind: m[1], icon: m[2], name: m[3], target: m[4], color: m[5] || "#ff6b35" });
+  });
+  return out;
+}
+function serializeNews(){
+  const lines = ["# News Topics",""];
+  state.news.topics.forEach(t => {
+    lines.push(`## ${t.name} ^${t.id}`);
+    t.feeds.forEach(f => lines.push(`- feed: ${f}`));
+    lines.push("");
+  });
+  lines.push("# Blocked Words","");
+  state.news.blocklist.forEach(w => lines.push(`- ${w}`));
+  return lines.join("\n") + "\n";
+}
+function parseNews(txt){
+  const topics = [];
+  let cur = null, inBlock = false;
+  txt.split(/\r?\n/).forEach(raw => {
+    const line = raw.trim();
+    if(/^#\s+Blocked/i.test(line)){ inBlock = true; cur = null; return; }
+    if(inBlock){ const m = line.match(/^-\s+(.+)/); if(m) parseNews._block.push(m[1].trim()); return; }
+    if(/^##\s+/.test(line)){
+      let name = line.replace(/^##\s+/, ""); let id = uid();
+      const idm = name.match(/\s*\^([a-z0-9]+)\s*$/i);
+      if(idm){ id = idm[1]; name = name.slice(0, idm.index).trim(); }
+      cur = { id, name, feeds: [], items: [], lastFetch: null };
+      topics.push(cur);
+      return;
+    }
+    const f = line.match(/^-\s+feed:\s*(\S+)/i);
+    if(f && cur) cur.feeds.push(f[1]);
+  });
+  return topics;
+}
+function serializeCalendar(){
+  const lines = ["# Calendar","","> Google Calendar events are synced from your secret iCal URLs and cached here. Manual events are kept.",""];
+  const cals = state.calendar.calendars || [];
+  if(cals.length){
+    lines.push("## Calendars","");
+    cals.forEach(c => lines.push(`- cal: ${(c.name || "Calendar").replace(/\|/g, "/")} | ${c.url || ""} | ${c.color || ""} | ${c.enabled === false ? "off" : "on"}`));
+    lines.push("");
+  }
+  const evs = [...state.calendar.manual];
+  if(evs.length){
+    lines.push("## Manual events","");
+    evs.forEach(e => lines.push(`- ${e.date} ${e.start}-${e.end} | ${e.title}${e.location ? " | " + e.location : ""} ^${e.id}`));
+    lines.push("");
+  }
+  if(state.calendar.lastSync) lines.push(`last-sync: ${state.calendar.lastSync}`);
+  return lines.join("\n") + "\n";
+}
+function parseCalendar(txt){
+  const manual = [], calendars = [];
+  let url = "";
+  txt.split(/\r?\n/).forEach(line => {
+    const u = line.match(/^ical-url:\s*(\S+)/i);
+    if(u) url = u[1];
+    const c = line.match(/^\s*-\s*cal:\s*(.+)$/i);
+    if(c){
+      const parts = c[1].split("|").map(s => s.trim());
+      if(parts[0] && parts[1]) calendars.push({ id: uid(), name: parts[0], url: parts[1], color: parts[2] || "", enabled: (parts[3] || "on").toLowerCase() !== "off" });
+      return;
+    }
+    const m = line.match(/^\s*-\s*(\d{4}-\d{2}-\d{2})\s+(\S+)-(\S+)\s*\|\s*(.+?)\s*(?:\|\s*(.+?))?\s*(?:\^([a-z0-9]+))?\s*$/i);
+    if(m){
+      const clean = line.replace(/^\s*-\s*/, "").replace(/\s*\^[a-z0-9]+\s*$/i, "");
+      const parts = clean.split("|").map(s => s.trim());
+      const [date, times] = parts[0].split(/\s+/);
+      const [start, end] = (times || "").split("-");
+      manual.push({ id: uid(), date, start, end, title: parts[1] || "Event", location: parts[2] || "" });
+    }
+  });
+  return { manual, calendars, url };
+}
+
+/* ---------- Apply parsed vault files into state ---------- */
+parseNews._block = [];
+function applyVault(files){
+  if(files["todos.md"] != null){
+    const t = parseTodos(files["todos.md"]);
+    if(t.length || /-\s*\[[ xX]\]/.test(files["todos.md"])) state.todos = t;
+  }
+  if(files["projects.md"] != null){
+    const p = parseProjects(files["projects.md"]);
+    if(p.work.length || p.personal.length) { state.work = p.work; state.personal = p.personal; }
+  }
+  if(files["hours.md"] != null){
+    const h = normalizeHours(parseHours(files["hours.md"]));
+    state.hours = { ...h, active: state.hours.active };
+  }
+  if(files["shortcuts.md"] != null){
+    const s = parseShortcuts(files["shortcuts.md"]);
+    if(s.length) state.shortcuts = s;
+  }
+  if(files["news.md"] != null){
+    parseNews._block = [];
+    const topics = parseNews(files["news.md"]);
+    if(topics.length) state.news.topics = topics.map(t => {
+      const old = state.news.topics.find(o => o.id === t.id || o.name === t.name);
+      return old ? { ...t, items: old.items || [], lastFetch: old.lastFetch } : t;
+    });
+    if(parseNews._block.length) state.news.blocklist = parseNews._block;
+  }
+  if(files["calendar.md"] != null){
+    const c = parseCalendar(files["calendar.md"]);
+    if(c.calendars.length) state.calendar.calendars = c.calendars;
+    else if(c.url && !(state.calendar.calendars || []).length) state.calendar.calendars = [{ id: uid(), name: "Google Calendar", url: c.url, color: "#0fa3a3", enabled: true }];
+    if(c.manual.length) state.calendar.manual = c.manual;
+  }
+  renderAll();
+}
+
+/* =========================================================================
+   CALENDAR
+   ========================================================================= */
+function unfoldICS(text){ return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n[ \t]/g, ""); }
+function icsUnescape(s){
+  return String(s || "").replace(/\\n/gi, " ").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\").trim();
+}
+function parseICSDate(value, params){
+  const isDate = /VALUE=DATE(?!-TIME)/i.test(params);
+  const m = value.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?/);
+  if(!m) return null;
+  const [, y, mo, d, h, mi, s, z] = m;
+  if(isDate || !h) return { date: new Date(+y, +mo - 1, +d), allDay: true };
+  if(z) return { date: new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +s)), allDay: false };
+  return { date: new Date(+y, +mo - 1, +d, +h, +mi, +s), allDay: false };
+}
+function parseICS(text){
+  const lines = unfoldICS(text).split("\n");
+  const events = [];
+  let cur = null;
+  for(const line of lines){
+    if(line === "BEGIN:VEVENT"){ cur = {}; continue; }
+    if(line === "END:VEVENT"){
+      if(cur && cur.dtstart){
+        const start = cur.dtstart.date;
+        let end = cur.dtend ? cur.dtend.date : new Date(start.getTime() + (cur.dtstart.allDay ? 0 : 3600000));
+        events.push({
+          id: cur.uid || uid(),
+          title: cur.summary || "(untitled)",
+          location: cur.location || "",
+          start: start.toISOString(),
+          end: end.toISOString(),
+          allDay: !!cur.dtstart.allDay,
+          date: todayKey(start),
+          source: "google"
+        });
+      }
+      cur = null; continue;
+    }
+    if(!cur) continue;
+    const idx = line.indexOf(":");
+    if(idx < 0) continue;
+    const keyRaw = line.slice(0, idx);
+    const val = line.slice(idx + 1);
+    const [key, ...params] = keyRaw.split(";");
+    const K = key.toUpperCase();
+    if(K === "UID") cur.uid = icsUnescape(val);
+    else if(K === "SUMMARY") cur.summary = icsUnescape(val);
+    else if(K === "LOCATION") cur.location = icsUnescape(val);
+    else if(K === "DTSTART") cur.dtstart = parseICSDate(val, params.join(";"));
+    else if(K === "DTEND") cur.dtend = parseICSDate(val, params.join(";"));
+  }
+  return events;
+}
+
+function allEventsForDay(key){
+  const dayStart = new Date(`${key}T00:00:00`).getTime();
+  const dayEnd = dayStart + 86400000;
+  const manual = state.calendar.manual.filter(e => e.date === key).map(e => {
+    const start = new Date(`${e.date}T${(e.start || "00:00")}:00`);
+    const end = new Date(`${e.date}T${(e.end || e.start || "00:00")}:00`);
+    return { id: e.id, title: e.title, location: e.location || "", start: start.toISOString(), end: end.toISOString(), allDay: false, date: e.date, source: "manual" };
+  });
+  // Include any synced event that overlaps this day (handles multi-day and overnight events).
+  const google = state.calendar.events.filter(e => {
+    const s = new Date(e.start).getTime();
+    let en = new Date(e.end).getTime();
+    if(!(en > s)) en = s + 60000;
+    return s < dayEnd && en > dayStart;
+  });
+  return [...manual, ...google].sort((a, b) => {
+    if(a.allDay !== b.allDay) return a.allDay ? -1 : 1;
+    return a.start.localeCompare(b.start);
+  });
+}
+
+function renderCalendar(){
+  const key = todayKey();
+  const evs = allEventsForDay(key);
+  const list = $("#eventList");
+  if(!evs.length){
+    list.innerHTML = `<li class="empty">No events today. ${(state.calendar.calendars || []).length ? "" : "Add your Google Calendar iCal URLs in Setup → Calendar."}</li>`;
+  } else {
+    list.innerHTML = evs.map(e => {
+      const s = new Date(e.start), en = new Date(e.end);
+      const now = Date.now();
+      const isNow = !e.allDay && now >= s.getTime() && now <= en.getTime();
+      const time = e.allDay ? "All day" : `${fmtTime(s)}–${fmtTime(en)}`;
+      return `<li class="event${isNow ? " now" : ""}${e.allDay ? " all-day" : ""}"${e.calColor ? ` style="--cal:${esc(e.calColor)}"` : ""}>
+        <span class="ev-time">${esc(time)}</span>
+        <span>
+          <span class="ev-title">${esc(e.title)}${e.calName ? ` <span class="ev-cal-tag">${esc(e.calName)}</span>` : ""}</span>
+          ${e.location ? `<span class="ev-loc">📍 ${esc(e.location)}</span>` : ""}
+        </span>
+      </li>`;
+    }).join("");
+  }
+  // next meeting
+  const now = Date.now();
+  const upcoming = evs.find(e => !e.allDay && new Date(e.end).getTime() > now && new Date(e.start).getTime() >= now - 60000)
+                || evs.find(e => !e.allDay && new Date(e.end).getTime() > now);
+  const nm = $("#nextMeeting");
+  if(upcoming){
+    const s = new Date(upcoming.start);
+    const mins = Math.round((s.getTime() - now) / 60000);
+    nm.classList.remove("is-clear");
+    $("#nmTitle").textContent = upcoming.title;
+    $("#nmTime").textContent = mins > 0
+      ? `Starts in ${mins < 60 ? mins + " min" : Math.floor(mins/60) + "h " + pad(mins%60) + "m"} · ${fmtTime(s)}`
+      : `In progress until ${fmtTime(new Date(upcoming.end))}`;
+  } else {
+    nm.classList.add("is-clear");
+    $("#nmTitle").textContent = evs.length ? "All done for today" : "Nothing scheduled";
+    $("#nmTime").textContent = evs.length ? "Calendar is clear." : "Enjoy the open runway.";
+  }
+}
+function fmtTime(d){
+  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function getProxies(){
+  let list = (state.settings && Array.isArray(state.settings.proxies)) ? state.settings.proxies.filter(Boolean) : [];
+  if(!list.length) list = DEFAULT_PROXIES.slice();
+  if(isCloud && window.mbCloud && window.mbCloud.proxyPrefix){
+    list = list.filter(p => p !== LOCAL_PROXY);
+    if(!list.includes(window.mbCloud.proxyPrefix)) list = [window.mbCloud.proxyPrefix, ...list];
+  }
+  return list;
+}
+// The single "active" proxy prefix (used by news); cloud function in cloud mode.
+function activeProxyPrefix(){
+  if(isCloud && window.mbCloud && window.mbCloud.proxyPrefix) return window.mbCloud.proxyPrefix;
+  return state.settings.proxy;
+}
+// Adds Supabase auth headers only for our own Edge Function calls.
+function proxyFetch(target, opts){
+  const o = { ...(opts || {}) };
+  if(isCloud && window.mbCloud && window.mbCloud.authHeaders && target.startsWith(window.mbCloud.functionBase)){
+    o.headers = { ...window.mbCloud.authHeaders(), ...(o.headers || {}) };
+  }
+  return fetch(target, o);
+}
+// Try the URL directly, then each proxy in order, until one returns ICS data.
+async function fetchIcs(url, proxies){
+  const attempts = ["", ...proxies];   // "" = direct fetch (works if served over http and the feed allows CORS)
+  let lastErr = "";
+  for(const p of attempts){
+    const target = p ? p + encodeURIComponent(url) : url;
+    try{
+      const res = await proxyFetch(target, { cache: "no-store", redirect: "follow" });
+      if(!res.ok){ lastErr = (p ? "proxy " : "") + "HTTP " + res.status; continue; }
+      let text = await res.text();
+      // Some proxies (e.g. allorigins /get) wrap the payload in JSON.
+      if(/^\s*[\[{]/.test(text)){
+        try{ const j = JSON.parse(text); if(typeof j.contents === "string") text = j.contents; }catch(e){}
+      }
+      if(!/BEGIN:VCALENDAR/i.test(text)){ lastErr = (p ? "proxy returned non-calendar data" : "feed returned non-calendar data"); continue; }
+      return { ok: true, text };
+    }catch(e){
+      lastErr = e && e.message ? e.message : String(e);
+    }
+  }
+  return { ok: false, error: lastErr || "no proxy reachable" };
+}
+async function syncCalendar(){
+  const cals = (state.calendar.calendars || []).filter(c => c.enabled !== false && c.url);
+  if(!cals.length){ toast("Add a calendar URL in Setup → Calendar first."); openSetup("calendar"); return; }
+  const proxies = getProxies();
+  toast(`Syncing ${cals.length} calendar${cals.length > 1 ? "s" : ""}…`);
+  const results = await Promise.all(cals.map(async cal => ({ cal, r: await fetchIcs(cal.url, proxies) })));
+  const events = [], okNames = [], failNames = [];
+  for(const { cal, r } of results){
+    if(r.ok){
+      okNames.push(cal.name);
+      events.push(...parseICS(r.text).map(e => ({ ...e, calId: cal.id, calName: cal.name, calColor: cal.color })));
+    } else {
+      failNames.push(`${cal.name} (${r.error})`);
+    }
+  }
+  if(okNames.length){
+    state.calendar.events = events;
+    state.calendar.lastSync = new Date().toISOString();
+    save(); renderCalendar();
+  }
+  if(failNames.length && !okNames.length) toast("⚠️ Calendar sync failed: " + failNames.join("; "));
+  else if(failNames.length) toast(`📅 Synced ${okNames.join(", ")}. Failed: ${failNames.join("; ")}`);
+  else toast(`📅 Synced ${events.length} events from ${okNames.join(", ")}.`);
+}
+function importICSFile(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      state.calendar.events = parseICS(String(reader.result));
+      state.calendar.lastSync = new Date().toISOString();
+      save(); renderCalendar();
+      toast(`📅 Imported ${state.calendar.events.length} events from ${file.name}.`);
+    }catch(e){ toast("⚠️ Could not read that .ics file."); }
+  };
+  reader.readAsText(file);
+}
+function addManualEvent(){
+  openModal("Add an event", `
+    <div class="field"><label for="evTitle">Title</label><input id="evTitle" type="text" placeholder="Design review…"></div>
+    <div class="row">
+      <div class="field"><label for="evDate">Date</label><input id="evDate" type="date" value="${todayKey()}"></div>
+      <div class="field"><label for="evStart">Start</label><input id="evStart" type="time" value="09:00"></div>
+      <div class="field"><label for="evEnd">End</label><input id="evEnd" type="time" value="10:00"></div>
+    </div>
+    <div class="field"><label for="evLoc">Location <span class="hint" style="display:inline">(optional)</span></label><input id="evLoc" type="text" placeholder="Zoom / Studio B…"></div>
+  `, [
+    { label: "Cancel", className: "btn-ghost" },
+    { label: "Add event", className: "btn-teal", onClick: () => {
+        const title = $("#evTitle").value.trim();
+        if(!title){ toast("Give the event a title."); return; }
+        state.calendar.manual.push({ id: uid(), title, date: $("#evDate").value || todayKey(), start: $("#evStart").value || "09:00", end: $("#evEnd").value || "10:00", location: $("#evLoc").value.trim() });
+        closeModal(); save(); renderCalendar(); toast("Event added.");
+      }}
+  ]);
+}
+
+/* =========================================================================
+   WORK HOURS
+   ========================================================================= */
+function liveMinutes(){
+  return state.hours.active ? Math.max(0, (Date.now() - new Date(state.hours.active.startedAt).getTime()) / 60000) : 0;
+}
+function clampToWeek(key){
+  const ws = state.hours.weekStart || weekStartKey();
+  const we = addDays(ws, 6);
+  if(key < ws) return ws;
+  if(key > we) return we;
+  return key;
+}
+// Rebuild a consistent hours object: entries are bucketed by their date into
+// the current week (Mon–Sun) or into History, and legacy `sessions` migrate.
+function normalizeHours(h){
+  let all = Array.isArray(h && h.entries) ? h.entries.slice() : [];
+  if(h && Array.isArray(h.sessions)){
+    all = all.concat(h.sessions.map(s => ({ id: s.id || uid(), date: s.date, client: "", project: s.project || "", minutes: s.minutes || 0, note: s.note || "" })));
+  }
+  if(h && Array.isArray(h.history)) h.history.forEach(w => (w.entries || []).forEach(e => all.push(e)));
+  const cur = weekStartKey(), curEnd = addDays(cur, 6);
+  const entries = [], byWeek = {};
+  all.forEach(e => {
+    if(!e || !e.date) return;
+    if(e.date >= cur && e.date <= curEnd){ entries.push(e); return; }
+    const wk = weekStartKey(parseDateKey(e.date));
+    if(!byWeek[wk]) byWeek[wk] = [];
+    byWeek[wk].push(e);
+  });
+  const history = Object.keys(byWeek).sort().reverse().map(wk => ({ weekStart: wk, entries: byWeek[wk] }));
+  let active = (h && h.active) || null;
+  if(active && typeof active.client !== "string") active = { ...active, client: "" };
+  return { weekStart: cur, entries, active, history };
+}
+// Add minutes to the matching client+project+day row, or create a new one.
+function logEntry({ date, client, project, minutes, note }){
+  const c = (client || "").trim(), p = (project || "").trim();
+  const match = state.hours.entries.find(e =>
+    e.date === date &&
+    (e.client || "").toLowerCase() === c.toLowerCase() &&
+    (e.project || "").toLowerCase() === p.toLowerCase());
+  if(match){
+    match.minutes = (match.minutes || 0) + minutes;
+    if(note) match.note = match.note ? match.note + "; " + note : note;
+  } else {
+    state.hours.entries.push({ id: uid(), date, client: c, project: p, minutes, note: note || "" });
+  }
+}
+
+function renderHours(){
+  const start = state.hours.weekStart || weekStartKey();
+  const days = weekDays(start);
+  $("#hoursWeek").textContent = "Week of " + fmtDate(start);
+
+  const today = todayKey();
+  let total = 0, todayMin = 0;
+  state.hours.entries.forEach(e => { total += e.minutes || 0; if(e.date === today) todayMin += e.minutes || 0; });
+  if(state.hours.active){
+    const live = liveMinutes();
+    total += live;
+    if(todayKey(new Date(state.hours.active.startedAt)) === today) todayMin += live;
+  }
+  $("#hoursWeekTotal").textContent = fmtHours(total);
+  $("#hoursToday").textContent = fmtHours(todayMin) + "h today";
+
+  const line = $("#timerLine"), btn = $("#clockToggle");
+  if(state.hours.active){
+    const started = new Date(state.hours.active.startedAt);
+    const who = [state.hours.active.client, state.hours.active.project].filter(Boolean).join(" · ");
+    line.innerHTML = `⏺ Running since ${esc(fmtTime(started))}${who ? " — " + esc(who) : ""} — <span class="timer live" id="liveTimer">--:--</span>`;
+    btn.textContent = "⏸ Stop & log"; btn.className = "btn btn-sm btn-berry";
+  } else {
+    line.textContent = "No timer running.";
+    btn.textContent = "▶ Start timer"; btn.className = "btn btn-sm btn-tangerine";
+  }
+  renderTimesheet(days);
+}
+function renderTimesheet(days){
+  const wrap = $("#timesheetWrap");
+  const rows = new Map();
+  const add = (client, project, date, minutes) => {
+    const key = (client || "") + "\u0000" + (project || "");
+    let row = rows.get(key);
+    if(!row){ row = { client: client || "", project: project || "", cells: {} }; rows.set(key, row); }
+    row.cells[date] = (row.cells[date] || 0) + minutes;
+  };
+  state.hours.entries.forEach(e => add(e.client, e.project, e.date, e.minutes || 0));
+  if(state.hours.active){
+    const a = state.hours.active;
+    add(a.client, a.project, clampToWeek(todayKey(new Date(a.startedAt))), liveMinutes());
+  }
+  const list = [...rows.values()].sort((a, b) => (a.client + "\u0000" + a.project).localeCompare(b.client + "\u0000" + b.project));
+  if(!list.length){
+    wrap.innerHTML = `<p class="hint">No time logged this week yet. Use “＋ Log time”, or start the timer.</p>`;
+    return;
+  }
+  const dayTotals = {}, clientTotals = {};
+  let grand = 0;
+  list.forEach(r => {
+    r.total = 0;
+    days.forEach(d => { const m = r.cells[d.key] || 0; r.total += m; dayTotals[d.key] = (dayTotals[d.key] || 0) + m; });
+    grand += r.total;
+    clientTotals[r.client] = (clientTotals[r.client] || 0) + r.total;
+  });
+  const head = `<tr><th>Project</th>${days.map(d => `<th title="${d.key}">${d.label}</th>`).join("")}<th>Total</th></tr>`;
+  const body = [];
+  let lastClient = null;
+  list.forEach(r => {
+    if(r.client !== lastClient){
+      lastClient = r.client;
+      body.push(`<tr class="ts-clientrow"><td colspan="${days.length + 2}">${esc(r.client || "No client")}<span class="ts-client-total">${fmtHours(clientTotals[r.client])}h</span></td></tr>`);
+    }
+    const cells = days.map(d => {
+      const m = r.cells[d.key] || 0;
+      return `<td class="${m ? "" : "ts-empty"}">${m ? fmtHours(m) : "·"}</td>`;
+    }).join("");
+    body.push(`<tr><td class="ts-proj" title="${esc((r.client ? r.client + " · " : "") + r.project)}">${esc(r.project || "—")}</td>${cells}<td class="ts-total">${fmtHours(r.total)}</td></tr>`);
+  });
+  const foot = `<tr class="ts-grand"><td>Total</td>${days.map(d => `<td>${dayTotals[d.key] ? fmtHours(dayTotals[d.key]) : "·"}</td>`).join("")}<td>${fmtHours(grand)}</td></tr>`;
+  wrap.innerHTML = `<table class="ts"><thead>${head}</thead><tbody>${body.join("")}${foot}</tbody></table>`;
+}
+function tickTimer(){
+  const el = $("#liveTimer");
+  if(el && state.hours.active){
+    const s = Math.floor(liveMinutes() * 60);
+    el.textContent = `${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`;
+  }
+}
+function toggleClock(){
+  if(state.hours.active){ stopTimer(); return; }
+  state.hours.active = { startedAt: new Date().toISOString(), client: "", project: "" };
+  save(); renderHours();
+  toast("▶ Timer started.");
+}
+function stopTimer(){
+  const started = new Date(state.hours.active.startedAt);
+  const minutes = Math.max(1, Math.round((Date.now() - started) / 60000));
+  const elapsed = Math.round((minutes / 60) * 100) / 100;
+  openModal("Log timer", `
+    <p class="hint" style="margin-bottom:10px">Timer ran ${minutesLabel(minutes)}. Add a client and project, adjust the hours if you like.</p>
+    <div class="row">
+      <div class="field"><label for="tmClient">Client</label><input id="tmClient" type="text" placeholder="Acme Co…" value="${esc(state.hours.active.client || "")}"></div>
+      <div class="field"><label for="tmProject">Project</label><input id="tmProject" type="text" placeholder="Cascade animatic…" value="${esc(state.hours.active.project || "")}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="tmHours">Hours</label><input id="tmHours" type="number" min="0" step="0.25" value="${elapsed}"></div>
+      <div class="field"><label for="tmNote">Notes <span class="hint" style="display:inline">(optional)</span></label><input id="tmNote" type="text"></div>
+    </div>
+  `, [
+    { label: "Discard", className: "btn-ghost", onClick: () => {
+        state.hours.active = null; closeModal(); save(); renderHours(); toast("Timer discarded.");
+      }},
+    { label: "Log it", className: "btn-tangerine", onClick: () => {
+        const hours = parseFloat($("#tmHours").value) || 0;
+        if(hours <= 0){ toast("Enter an hour amount."); return; }
+        logEntry({ date: clampToWeek(todayKey(started)), client: $("#tmClient").value, project: $("#tmProject").value, minutes: Math.round(hours * 60), note: $("#tmNote").value.trim() });
+        state.hours.active = null;
+        closeModal(); save(); renderHours(); toast(`⏹ Logged ${fmtHours(Math.round(hours * 60))}h.`);
+      }}
+  ]);
+}
+function logTimeManual(){
+  const ws = state.hours.weekStart || weekStartKey();
+  const we = addDays(ws, 6);
+  openModal("Log time", `
+    <div class="row">
+      <div class="field"><label for="ltDate">Date</label><input id="ltDate" type="date" min="${ws}" max="${we}" value="${clampToWeek(todayKey())}"></div>
+      <div class="field"><label for="ltHours">Hours</label><input id="ltHours" type="number" min="0" step="0.25" value="1"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="ltClient">Client</label><input id="ltClient" type="text" placeholder="Acme Co…"></div>
+      <div class="field"><label for="ltProject">Project</label><input id="ltProject" type="text" placeholder="Cascade animatic…"></div>
+    </div>
+    <div class="field"><label for="ltNote">Notes <span class="hint" style="display:inline">(optional)</span></label><input id="ltNote" type="text"></div>
+  `, [
+    { label: "Cancel", className: "btn-ghost" },
+    { label: "Log it", className: "btn-tangerine", onClick: () => {
+        const hours = parseFloat($("#ltHours").value) || 0;
+        if(hours <= 0){ toast("Enter an hour amount."); return; }
+        const date = clampToWeek($("#ltDate").value || todayKey());
+        logEntry({ date, client: $("#ltClient").value, project: $("#ltProject").value, minutes: Math.round(hours * 60), note: $("#ltNote").value.trim() });
+        closeModal(); save(); renderHours(); toast(`Logged ${fmtHours(Math.round(hours * 60))}h.`);
+      }}
+  ]);
+}
+
+/* =========================================================================
+   SHORTCUTS
+   ========================================================================= */
+const ICON_CHOICES = ["🎬","🪄","🔮","🐙","▶️","🧊","🤗","🎞️","🎨","🖌️","🧩","💡","🚀","🎧","🛠️","📦","🧠","🖥️","📷","🌈","⚡","🦾","🕹️","📐"];
+function renderShortcuts(){
+  const grid = $("#shortcutGrid");
+  grid.innerHTML = state.shortcuts.map(s => `
+    <div class="shortcut" data-id="${s.id}">
+      <button class="shortcut-link" type="button" data-open="${s.id}" aria-label="Open ${esc(s.name)}" style="background:none;border:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:inherit;font:inherit">
+        <span class="tile" style="--sc:${esc(s.color || "#ff6b35")}" aria-hidden="true">${esc(s.icon)}</span>
+        <span class="sc-name">${esc(s.name)}</span>
+      </button>
+      <button class="sc-edit" type="button" data-edit="${s.id}" aria-label="Edit ${esc(s.name)}">✎</button>
+    </div>
+  `).join("") + `
+    <button class="shortcut shortcut-add" type="button" id="scAddTile" aria-label="Add a shortcut">
+      <span class="tile" aria-hidden="true">＋</span>
+      <span class="sc-name">Add</span>
+    </button>`;
+}
+async function openShortcut(id){
+  const s = state.shortcuts.find(x => x.id === id);
+  if(!s) return;
+  // Web links open in a new tab, no server needed.
+  if(s.kind === "web" || /^https?:/i.test(s.target)){
+    window.open(s.target, "_blank", "noopener");
+    return;
+  }
+  // Desktop app: launch natively through the preload bridge.
+  if(isDesktop && window.morningBrief.launch){
+    const r = await window.morningBrief.launch(s.target);
+    toast(r.ok ? "🚀 Launched " + s.name + "." : "⚠️ Couldn’t launch " + s.name + (r.error ? " — " + r.error : "."));
+    return;
+  }
+  // Apps, custom protocols and local files go through the local server, which
+  // is allowed to launch them (a plain web page is not).
+  if(serverOnline){
+    try{
+      const r = await fetch(localServerBase() + "/launch?target=" + encodeURIComponent(s.target), {
+        headers: { "X-Morning-Brief": "1" }, cache: "no-store"
+      });
+      const j = await r.json().catch(() => ({}));
+      if(r.ok && j.ok){ toast("🚀 Launched " + s.name + "."); return; }
+      toast("⚠️ Couldn’t launch " + s.name + (j.error ? " — " + j.error : "."));
+      return;
+    }catch(e){
+      serverOnline = false;
+    }
+  }
+  // Fallback: let the browser try (custom protocols may prompt; .exe/files are blocked).
+  try{ window.location.href = s.target; }catch(e){}
+  toast("Your browser blocked the " + (s.kind === "file" ? "local file" : "app") + " link. Run Start Dashboard.bat for desktop launching.");
+}
+function shortcutDialog(existing){
+  const s = existing || { id: uid(), icon: "🚀", name: "", target: "", kind: "web", color: "#ff6b35" };
+  openModal(existing ? "Edit shortcut" : "Add a shortcut", `
+    <div class="field"><label for="scName">Name</label><input id="scName" type="text" value="${esc(s.name)}" placeholder="Blender…"></div>
+    <div class="field"><label for="scTarget">Target</label><input id="scTarget" type="text" value="${esc(s.target)}" placeholder="https://… or blender:// or file:///C:/…"></div>
+    <div class="row">
+      <div class="field"><label for="scKind">Kind</label>
+        <select id="scKind">
+          <option value="web"${s.kind==="web"?" selected":""}>Web link</option>
+          <option value="app"${s.kind==="app"?" selected":""}>App / custom protocol</option>
+          <option value="file"${s.kind==="file"?" selected":""}>Local file or folder</option>
+        </select>
+      </div>
+      <div class="field"><label for="scColor">Tile color</label><input id="scColor" type="text" value="${esc(s.color)}" placeholder="#ff6b35"></div>
+    </div>
+    <div class="field"><label>Icon</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px" id="iconPicker">
+        ${ICON_CHOICES.map(i => `<button type="button" class="btn btn-sm icon-choice" data-icon="${i}" aria-pressed="${i===s.icon}" style="padding:6px 9px;font-size:1.1rem">${i}</button>`).join("")}
+      </div>
+      <p class="hint">Or paste any emoji: <input id="scIcon" type="text" value="${esc(s.icon)}" style="width:70px;display:inline-block;margin-top:6px" maxlength="4" aria-label="Custom icon emoji"></p>
+    </div>
+    <p class="hint">Web links open in a new tab. Apps, custom protocols (like <code>blender://</code>) and local files or folders (<code>file:///C:/…</code>) launch through the local server — run <code>Start Dashboard.bat</code> and the 🖥️ Desktop badge appears when it's ready.</p>
+  `, [
+    ...(existing ? [{ label: "Delete", className: "btn-berry", onClick: () => { closeModal(); confirmAction("Delete “" + s.name + "”?", () => { state.shortcuts = state.shortcuts.filter(x => x.id !== s.id); save(); renderShortcuts(); }); } }] : []),
+    { label: "Cancel", className: "btn-ghost" },
+    { label: existing ? "Save" : "Add", className: "btn-tangerine", onClick: () => {
+        const name = $("#scName").value.trim();
+        const target = $("#scTarget").value.trim();
+        if(!name || !target){ toast("Name and target are required."); return; }
+        const obj = { id: s.id, name, target, kind: $("#scKind").value, color: $("#scColor").value.trim() || "#ff6b35", icon: $("#scIcon").value.trim() || "🚀" };
+        const i = state.shortcuts.findIndex(x => x.id === s.id);
+        if(i >= 0) state.shortcuts[i] = obj; else state.shortcuts.push(obj);
+        closeModal(); save(); renderShortcuts(); toast(existing ? "Shortcut updated." : "Shortcut added.");
+      }}
+  ]);
+  $$("#iconPicker .icon-choice").forEach(b => b.addEventListener("click", () => {
+    $("#scIcon").value = b.dataset.icon;
+    $$("#iconPicker .icon-choice").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+}
+
+/* =========================================================================
+   AI — Gab AI (OpenAI-compatible), relayed through the local server
+   ========================================================================= */
+async function aiChat(request){
+  const ai = state.settings.ai || {};
+  if(!ai.key) throw new Error("Add your Gab API key in Setup → AI.");
+  if(isCloud && window.mbCloud && window.mbCloud.aiChat){
+    return window.mbCloud.aiChat(request, ai.key);
+  }
+  if(!serverOnline) throw new Error("AI needs the local server — run the desktop app or Start Dashboard.bat.");
+  let r;
+  try{
+    r = await fetch(localServerBase() + "/ai/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Morning-Brief": "1" },
+      body: JSON.stringify({ apiKey: ai.key, request })
+    });
+  }catch(e){
+    throw new Error("Couldn’t reach the local server.");
+  }
+  const j = await r.json().catch(() => ({}));
+  if(!r.ok){
+    const msg = (j && j.error && (j.error.message || j.error)) || ("AI error " + r.status);
+    throw new Error(typeof msg === "string" ? msg : "AI error " + r.status);
+  }
+  return j;
+}
+function parseTaskList(content){
+  if(!content) return [];
+  let text = String(content).trim().replace(/^```[a-z]*\s*/i, "").replace(/```\s*$/, "").trim();
+  let obj = null;
+  try{ obj = JSON.parse(text); }
+  catch(e){
+    const m = text.match(/[\[{][\s\S]*[\]}]/);
+    if(m){ try{ obj = JSON.parse(m[0]); }catch(e2){ obj = null; } }
+  }
+  let arr = [];
+  if(Array.isArray(obj)) arr = obj;
+  else if(obj && Array.isArray(obj.tasks)) arr = obj.tasks;
+  else if(obj && Array.isArray(obj.items)) arr = obj.items;
+  else if(obj && Array.isArray(obj.todos)) arr = obj.todos;
+  if(!arr.length){
+    arr = text.split(/\r?\n/).map(l => l.replace(/^\s*[-*\u2022]?\s*\d*[.)]?\s*/, "").trim()).filter(Boolean);
+  }
+  return arr
+    .map(t => typeof t === "string" ? t.trim() : (t && t.text ? String(t.text).trim() : (t && t.title ? String(t.title).trim() : "")))
+    .filter(Boolean)
+    .slice(0, 30);
+}
+async function generateTasks({ name, description }){
+  const sys = "You are a project planning assistant. Given a project name and description, produce a concise, actionable to-do list. Reply with ONLY JSON of the form {\"tasks\": [\"short task\", ...]} with 5 to 12 items. Each item is a short imperative phrase. Do not number them.";
+  const user = `Project: ${name || "(untitled)"}\nDescription: ${description || "(none provided)"}\nReturn the JSON now.`;
+  const j = await aiChat({
+    model: (state.settings.ai && state.settings.ai.model) || "auto",
+    messages: [{ role: "system", content: sys }, { role: "user", content: user }],
+    response_format: { type: "json_object" },
+    temperature: 0.4
+  });
+  const content = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+  return parseTaskList(content);
+}
+
+/* =========================================================================
+   CLOUD ACCOUNT (sign in / out)
+   ========================================================================= */
+function authDialog(){
+  if(!isCloud || !window.mbCloud) return;
+  const u = window.mbCloud.auth.user();
+  if(u){
+    openModal("Account", `
+      <p style="margin-bottom:6px">Signed in as <strong>${esc(u.email)}</strong>.</p>
+      <p class="hint">Your dashboard syncs to this account automatically — changes push within a couple of seconds, and it pulls every 60s. Sync status: <strong id="authSync">${esc(window.mbCloud.sync.status())}</strong>.</p>
+    `, [
+      { label: "Sign out", className: "btn-berry", onClick: async () => { closeModal(); await window.mbCloud.auth.signOut(); toast("Signed out."); } },
+      { label: "Close", className: "btn-ghost" }
+    ]);
+    window.mbCloud.sync.onChange(s => { const el = $("#authSync"); if(el) el.textContent = s; });
+    return;
+  }
+  openModal("Sign in", `
+    <p class="hint" style="margin-bottom:10px">Sign in to sync your dashboard across your PC and tablet. Your data is private to this account.</p>
+    <div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="username" placeholder="you@example.com"></div>
+    <div class="field"><label for="authPass">Password</label><input id="authPass" type="password" autocomplete="current-password" placeholder="At least 6 characters"></div>
+    <span class="hint" id="authMsg"></span>
+  `, [
+    { label: "Create account", className: "btn-ghost", onClick: () => doAuth("signUp") },
+    { label: "Sign in", className: "btn-teal", onClick: () => doAuth("signIn") }
+  ]);
+  async function doAuth(kind){
+    const email = $("#authEmail").value.trim();
+    const pass = $("#authPass").value;
+    const msg = $("#authMsg");
+    if(!email || !pass){ msg.textContent = "Enter an email and password."; return; }
+    msg.textContent = "Working…";
+    try{
+      await window.mbCloud.auth[kind](email, pass);
+      closeModal();
+      toast(kind === "signUp" ? "Account created — you’re signed in." : "Signed in.");
+    }catch(e){
+      msg.textContent = "⚠️ " + (e && e.message ? e.message : e);
+    }
+  }
+}
+
+/* =========================================================================
+   PROJECTS
+   ========================================================================= */
+// Progress is derived from the task list when one exists, else the stored value.
+function projectProgress(p){
+  const tasks = Array.isArray(p.tasks) ? p.tasks : [];
+  if(tasks.length) return Math.round(tasks.filter(t => t.done).length / tasks.length * 100);
+  return clamp(p.progress || 0, 0, 100);
+}
+function projectListId(bucket){ return bucket === "work" ? "#workList" : "#personalList"; }
+function renderProjects(bucket, listId){
+  const el = $(listId);
+  const list = state[bucket];
+  if(!list.length){
+    el.innerHTML = `<p class="empty">No ${bucket} projects yet. Hit “＋ Add”.</p>`;
+    return;
+  }
+  if(!state.ui.openProjects) state.ui.openProjects = {};
+  el.innerHTML = list.map(p => {
+    const tasks = Array.isArray(p.tasks) ? p.tasks : [];
+    const done = tasks.filter(t => t.done).length;
+    const pct = projectProgress(p);
+    const isOpen = !!state.ui.openProjects[p.id];
+    return `
+    <article class="project${isOpen ? " is-open" : ""}" data-id="${p.id}">
+      <div class="project-top">
+        <button class="p-toggle" type="button" data-pexpand="${p.id}" data-bucket="${bucket}" aria-expanded="${isOpen}" aria-label="Toggle tasks for ${esc(p.name)}">
+          <span class="p-caret" aria-hidden="true">${isOpen ? "▾" : "▸"}</span>
+          <span class="p-name">${esc(p.name)}</span>
+        </button>
+        <span class="status-pill status-${esc(p.status || "active")}">${esc(p.status || "active")}</span>
+        <button class="btn btn-sm" type="button" data-pedit="${p.id}" data-bucket="${bucket}" aria-label="Edit ${esc(p.name)}">✎</button>
+      </div>
+      ${p.note ? `<p class="hint">${esc(p.note)}</p>` : ""}
+      <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${esc(p.name)} progress"><span style="width:${pct}%"></span></div>
+      <div class="p-meta"><span>${pct}% complete${tasks.length ? " · " + done + "/" + tasks.length + " tasks" : ""}</span>${p.due ? `<span>· due ${esc(p.due)}</span>` : ""}</div>
+      ${isOpen ? renderProjectTasks(bucket, p) : ""}
+    </article>`;
+  }).join("");
+}
+function renderProjectTasks(bucket, p){
+  const tasks = Array.isArray(p.tasks) ? p.tasks : [];
+  const rows = tasks.map(t => `
+    <li class="ptask">
+      <input type="checkbox" data-ptoggle="${t.id}" data-bucket="${bucket}" data-pid="${p.id}"${t.done ? " checked" : ""} aria-label="Mark task done">
+      <input type="text" class="ptask-text${t.done ? " done" : ""}" value="${esc(t.text)}" data-prename="${t.id}" data-bucket="${bucket}" data-pid="${p.id}" aria-label="Task text">
+      <button class="btn btn-sm ptask-del" type="button" data-pdel="${t.id}" data-bucket="${bucket}" data-pid="${p.id}" aria-label="Delete task">✕</button>
+    </li>`).join("");
+  return `
+    <div class="project-tasks">
+      ${tasks.length ? `<ul class="ptask-list">${rows}</ul>` : `<p class="hint" style="margin-bottom:8px">No tasks yet — add one below, or use AI in Edit.</p>`}
+      <form class="ptask-add" data-padd="${p.id}" data-bucket="${bucket}">
+        <input type="text" placeholder="Add a task…" aria-label="New task">
+        <button class="btn btn-sm" type="submit" aria-label="Add task">＋</button>
+      </form>
+    </div>`;
+}
+function projectDialog(bucket, existing){
+  const p = existing || { id: uid(), name: "", status: "active", progress: 0, due: "", note: "", tasks: [] };
+  let dialogTasks = (Array.isArray(p.tasks) ? p.tasks : []).map(t => ({ id: t.id || uid(), text: t.text || "", done: !!t.done }));
+
+  function renderDialogTasks(){
+    const ul = $("#prTasks");
+    ul.innerHTML = dialogTasks.map((t, i) => `
+      <li class="ptask-edit-row" data-i="${i}">
+        <input type="checkbox" data-dtoggle="${i}"${t.done ? " checked" : ""} aria-label="Done">
+        <input type="text" class="ptask-text" data-dtext="${i}" value="${esc(t.text)}" placeholder="Task…" aria-label="Task text">
+        <button class="btn btn-sm ptask-del" type="button" data-ddel="${i}" aria-label="Delete task">✕</button>
+      </li>`).join("") || `<li class="hint" style="list-style:none">No tasks yet.</li>`;
+  }
+
+  openModal(existing ? "Edit project" : "New " + bucket + " project", `
+    <div class="field"><label for="prName">Project name</label><input id="prName" type="text" value="${esc(p.name)}" placeholder="Cascade animatic…"></div>
+    <div class="row">
+      <div class="field"><label for="prStatus">Status</label>
+        <select id="prStatus">
+          ${["active","idea","blocked","done"].map(s => `<option value="${s}"${p.status===s?" selected":""}>${s[0].toUpperCase()+s.slice(1)}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field"><label for="prDue">Due date</label><input id="prDue" type="date" value="${esc(p.due)}"></div>
+    </div>
+    <div class="field"><label for="prNote">Notes</label><textarea id="prNote" placeholder="Where it stands, next step…">${esc(p.note)}</textarea></div>
+    <div class="field">
+      <label for="prDesc">Describe the project <span class="hint" style="display:inline">(for AI)</span></label>
+      <textarea id="prDesc" placeholder="e.g. A 90-second animatic for the Cascade campaign: storyboard, animatic, sound pass, final render…"></textarea>
+      <div class="row" style="margin-top:8px;align-items:center">
+        <button class="btn btn-sm btn-teal" type="button" id="prGen">✨ Generate to-dos</button>
+        <span class="hint" id="prGenStatus"></span>
+      </div>
+    </div>
+    <div class="field">
+      <label>To-do list <span class="hint" style="display:inline">(progress is calculated from these)</span></label>
+      <ul class="ptask-edit" id="prTasks"></ul>
+      <button class="btn btn-sm" type="button" id="prAddTask">＋ Add task</button>
+    </div>
+  `, [
+    ...(existing ? [{ label: "Delete", className: "btn-berry", onClick: () => { closeModal(); confirmAction("Delete “" + p.name + "”?", () => { state[bucket] = state[bucket].filter(x => x.id !== p.id); save(); renderAll(); }); } }] : []),
+    { label: "Cancel", className: "btn-ghost" },
+    { label: existing ? "Save" : "Create", className: "btn-tangerine", onClick: () => {
+        const name = $("#prName").value.trim();
+        if(!name){ toast("Give the project a name."); return; }
+        const tasks = dialogTasks.filter(t => t.text.trim()).map(t => ({ id: t.id, text: t.text.trim(), done: !!t.done }));
+        const obj = { id: p.id, name, status: $("#prStatus").value, due: $("#prDue").value, progress: p.progress || 0, note: $("#prNote").value.trim(), tasks };
+        const i = state[bucket].findIndex(x => x.id === p.id);
+        if(i >= 0) state[bucket][i] = obj; else state[bucket].push(obj);
+        closeModal(); save(); renderAll(); toast(existing ? "Project updated." : "Project created.");
+      }}
+  ]);
+
+  renderDialogTasks();
+  $("#prTasks").addEventListener("input", e => {
+    const tx = e.target.closest("[data-dtext]"); if(!tx) return;
+    dialogTasks[+tx.dataset.dtext].text = tx.value;
+  });
+  $("#prTasks").addEventListener("change", e => {
+    const cb = e.target.closest("[data-dtoggle]"); if(!cb) return;
+    dialogTasks[+cb.dataset.dtoggle].done = cb.checked;
+  });
+  $("#prTasks").addEventListener("click", e => {
+    const del = e.target.closest("[data-ddel]"); if(!del) return;
+    dialogTasks.splice(+del.dataset.ddel, 1); renderDialogTasks();
+  });
+  $("#prAddTask").addEventListener("click", () => {
+    dialogTasks.push({ id: uid(), text: "", done: false });
+    renderDialogTasks();
+    const inputs = $$("#prTasks .ptask-text");
+    if(inputs.length) inputs[inputs.length - 1].focus();
+  });
+  $("#prGen").addEventListener("click", async () => {
+    const name = $("#prName").value.trim();
+    const desc = $("#prDesc").value.trim();
+    if(!desc && !name){ toast("Add a name or description first."); return; }
+    const status = $("#prGenStatus"), btn = $("#prGen");
+    status.textContent = "Generating…";
+    btn.disabled = true;
+    try{
+      const items = await generateTasks({ name, description: desc });
+      if(!items.length){ status.textContent = "No tasks returned."; return; }
+      dialogTasks = items.map(text => ({ id: uid(), text, done: false }));
+      renderDialogTasks();
+      status.textContent = items.length + " tasks — rename or delete as needed.";
+    }catch(e){
+      status.textContent = "";
+      toast("⚠️ " + (e.message || e));
+    }finally{ btn.disabled = false; }
+  });
+}
+
+/* =========================================================================
+   TODOS
+   ========================================================================= */
+function renderTodos(){
+  const list = $("#todoList");
+  const open = state.todos.filter(t => !t.done).length;
+  $("#todoCount").textContent = open + " open";
+  const items = state.todos.slice().sort((a, b) => {
+    if(a.done !== b.done) return a.done ? 1 : -1;
+    const rank = { high: 0, med: 1, low: 2 };
+    if((rank[a.prio] ?? 1) !== (rank[b.prio] ?? 1)) return (rank[a.prio] ?? 1) - (rank[b.prio] ?? 1);
+    return (a.due || "9999") .localeCompare(b.due || "9999");
+  });
+  if(!items.length){ list.innerHTML = `<li class="empty">Nothing on the list. Nice.</li>`; return; }
+  list.innerHTML = items.map(t => {
+    const overdue = t.due && !t.done && t.due < todayKey();
+    return `<li class="todo${t.done ? " done" : ""}" data-id="${t.id}">
+      <input type="checkbox" ${t.done ? "checked" : ""} data-toggle="${t.id}" aria-label="Mark “${esc(t.text)}” ${t.done ? "not done" : "done"}">
+      <div class="t-body">
+        <p class="t-text">${esc(t.text)}</p>
+        <div class="t-meta">
+          <span class="tag prio-${esc(t.prio || "med")}">${esc((t.prio || "med").toUpperCase())}</span>
+          ${t.due ? `<span class="tag${overdue ? " overdue" : ""}">${overdue ? "Overdue " : "Due "}${esc(t.due)}</span>` : ""}
+          ${t.project ? `<span class="tag">@${esc(t.project)}</span>` : ""}
+        </div>
+      </div>
+      <button class="btn btn-sm t-del" type="button" data-del="${t.id}" aria-label="Delete “${esc(t.text)}”">✕</button>
+    </li>`;
+  }).join("");
+}
+
+/* =========================================================================
+   NEWS
+   ========================================================================= */
+function parseFeed(xml){
+  const doc = new DOMParser().parseFromString(xml, "text/xml");
+  if(doc.querySelector("parsererror")) throw new Error("Feed could not be parsed.");
+  const items = [];
+  const rss = doc.querySelectorAll("item");
+  if(rss.length){
+    rss.forEach(it => items.push({
+      title: text(it, "title"), link: text(it, "link"),
+      date: text(it, "pubDate") || text(it, "date"),
+      summary: strip(text(it, "description")),
+      source: ""
+    }));
+  }
+  const entries = doc.querySelectorAll("entry");
+  if(entries.length){
+    entries.forEach(en => {
+      const linkEl = en.querySelector("link[rel=alternate]") || en.querySelector("link");
+      items.push({
+        title: text(en, "title"),
+        link: linkEl ? linkEl.getAttribute("href") : "",
+        date: text(en, "updated") || text(en, "published"),
+        summary: strip(text(en, "summary") || text(en, "content")),
+        source: ""
+      });
+    });
+  }
+  return items.filter(i => i.title && i.link);
+}
+function text(node, tag){
+  const el = node.querySelector(tag);
+  return el ? (el.textContent || "").trim() : "";
+}
+function strip(html){
+  const d = document.createElement("div");
+  d.innerHTML = html || "";
+  return (d.textContent || "").replace(/\s+/g, " ").trim().slice(0, 240);
+}
+function hostOf(url){
+  try{ return new URL(url).hostname.replace(/^www\./, ""); }catch(e){ return ""; }
+}
+function isBlocked(item){
+  if(!state.settings.blockPolitics) return false;
+  const hay = (item.title + " " + (item.summary || "")).toLowerCase();
+  return state.news.blocklist.some(w => w && hay.includes(w.toLowerCase()));
+}
+function renderNews(){
+  const tabs = $("#newsTabs");
+  const topics = state.news.topics;
+  if(!topics.length){ tabs.innerHTML = ""; $("#newsList").innerHTML = `<li class="empty">No topics yet. Click “Topics”.</li>`; return; }
+  const active = topics.find(t => t.id === state.news.activeTopic) || topics[0];
+  state.news.activeTopic = active.id;
+  tabs.innerHTML = topics.map(t => {
+    const n = (t.items || []).filter(i => !isBlocked(i)).length;
+    return `<button class="tab" role="tab" type="button" data-topic="${t.id}" aria-selected="${t.id === active.id}">${esc(t.name)}${n ? " " + n : ""}</button>`;
+  }).join("");
+  const items = (active.items || []).filter(i => !isBlocked(i)).slice(0, 40);
+  if(!items.length){
+    $("#newsList").innerHTML = `<li class="empty">No stories cached for ${esc(active.name)}. Click “↻ Refresh”${state.settings.proxy ? "" : " — or set a CORS proxy in Setup"}.</li>`;
+    return;
+  }
+  $("#newsList").innerHTML = items.map(i => `
+    <li class="news-item">
+      <div class="n-body">
+        <a class="n-title" href="${esc(i.link)}" target="_blank" rel="noopener noreferrer">${esc(i.title)}</a>
+        <p class="n-src">${esc(i.feedName || hostOf(i.link))}${i.date ? " · " + esc(relTime(i.date)) : ""}</p>
+        ${i.summary ? `<p class="n-sum">${esc(i.summary)}</p>` : ""}
+      </div>
+    </li>
+  `).join("");
+}
+function relTime(d){
+  const t = new Date(d).getTime();
+  if(isNaN(t)) return "";
+  const diff = Date.now() - t;
+  const h = Math.floor(diff / 3600000);
+  if(h < 1) return "just now";
+  if(h < 24) return h + "h ago";
+  const days = Math.floor(h / 24);
+  if(days < 7) return days + "d ago";
+  return new Date(t).toLocaleDateString([], { month: "short", day: "numeric" });
+}
+async function refreshNews(onlyTopic){
+  const topics = onlyTopic ? [state.news.topics.find(t => t.id === onlyTopic)] : state.news.topics;
+  if(!state.settings.proxy){
+    toast("⚠️ No CORS proxy set — feeds will likely be blocked. Add one in Setup → News.");
+  }
+  toast("Fetching feeds…");
+  let total = 0, errors = 0;
+  for(const topic of topics){
+    if(!topic) continue;
+    const collected = [];
+    for(const feed of topic.feeds){
+      try{
+        const prefix = activeProxyPrefix();
+        const target = prefix ? prefix + encodeURIComponent(feed) : feed;
+        const res = await proxyFetch(target, { cache: "no-store" });
+        if(!res.ok) throw new Error("HTTP " + res.status);
+        const xml = await res.text();
+        parseFeed(xml).slice(0, 12).forEach(i => collected.push({ ...i, feedName: hostOf(feed) }));
+      }catch(e){ errors++; }
+    }
+    collected.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // de-dupe by link
+    const seen = new Set();
+    topic.items = collected.filter(i => { if(seen.has(i.link)) return false; seen.add(i.link); return true; }).slice(0, 60);
+    topic.lastFetch = new Date().toISOString();
+    total += topic.items.length;
+  }
+  save(); renderNews();
+  toast(total ? `📡 Loaded ${total} stories${errors ? ` (${errors} feed${errors>1?"s":""} unreachable)` : ""}.`
+             : "⚠️ No stories loaded — check your CORS proxy and feed URLs.");
+}
+function newsTopicsDialog(){
+  openModal("News topics", `
+    <p class="hint" style="margin-bottom:12px">One topic per line as <code>Name | feed-url</code>. Use multiple lines for multiple feeds under the same name. Political stories are filtered by the blocklist below.</p>
+    <div class="field">
+      <label for="topicsText">Topics &amp; feeds</label>
+      <textarea id="topicsText" style="min-height:180px" spellcheck="false">${esc(state.news.topics.map(t => t.feeds.map(f => `${t.name} | ${f}`).join("\n")).join("\n"))}</textarea>
+    </div>
+    <div class="field">
+      <label for="blockText">Blocked words (one per line)</label>
+      <textarea id="blockText" spellcheck="false">${esc(state.news.blocklist.join("\n"))}</textarea>
+    </div>
+    <div class="field">
+      <label for="proxyText">CORS proxy prefix</label>
+      <input id="proxyText" type="text" value="${esc(state.settings.proxy)}" placeholder="https://api.allorigins.win/raw?url=">
+      <p class="hint">RSS feeds can’t be fetched directly from a local page. The default is the <strong>local server</strong> (start it with <code>Start Dashboard.bat</code>), which proxies on your machine. Leave blank to fetch directly (works only if the feed allows CORS).</p>
+    </div>
+  `, [
+    { label: "Cancel", className: "btn-ghost" },
+    { label: "Save topics", className: "btn-teal", onClick: () => {
+        const lines = $("#topicsText").value.split("\n").map(l => l.trim()).filter(Boolean);
+        const map = new Map();
+        lines.forEach(l => {
+          const i = l.indexOf("|");
+          if(i < 0) return;
+          const name = l.slice(0, i).trim();
+          const url = l.slice(i + 1).trim();
+          if(!name || !/^https?:/i.test(url)) return;
+          if(!map.has(name)) map.set(name, []);
+          map.get(name).push(url);
+        });
+        const old = state.news.topics;
+        state.news.topics = Array.from(map.entries()).map(([name, feeds], idx) => {
+          const prev = old.find(o => o.name === name) || old[idx];
+          return { id: prev ? prev.id : uid(), name, feeds, items: prev ? prev.items || [] : [], lastFetch: prev ? prev.lastFetch : null };
+        });
+        state.news.blocklist = $("#blockText").value.split("\n").map(s => s.trim()).filter(Boolean);
+        state.settings.proxy = $("#proxyText").value.trim();
+        if(!state.news.topics.find(t => t.id === state.news.activeTopic)) state.news.activeTopic = state.news.topics[0]?.id;
+        closeModal(); save(); renderNews(); toast("Topics saved.");
+      }}
+  ]);
+}
+
+/* =========================================================================
+   SETUP
+   ========================================================================= */
+function calendarRowHTML(cal){
+  return `<div class="cal-row" data-cid="${cal.id}">
+    <input class="cal-name" type="text" value="${esc(cal.name || "")}" placeholder="Work / Personal">
+    <input class="cal-color" type="color" value="${esc(cal.color || "#0fa3a3")}" title="Colour">
+    <button class="btn btn-sm btn-ghost cal-del" type="button" data-cdel="${cal.id}" title="Remove calendar" aria-label="Remove calendar">✕</button>
+    <input class="cal-url" type="text" value="${esc(cal.url || "")}" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics">
+  </div>`;
+}
+function openSetup(tab){
+  const body = `
+    <div class="modal-tabs" role="tablist">
+      ${[["general","General"],["calendar","Calendar"],["news","News"],["ai","AI"],["vault","Vault &amp; Obsidian"],["data","Data"]].map(([id,label]) =>
+        `<button class="tab" type="button" role="tab" data-stab="${id}" aria-selected="${(tab||"general")===id}">${label}</button>`).join("")}
+    </div>
+    <div id="setupPane"></div>`;
+  openModal("Setup", body, [{ label: "Done", className: "btn-teal" }]);
+  const panes = {
+    general: () => `
+      <div class="field"><label for="setName">Your name</label><input id="setName" type="text" value="${esc(state.profile.name)}" placeholder="e.g. Chris"></div>
+      <p class="hint">Used to greet you in the header.</p>`,
+    calendar: () => `
+      <p class="hint" style="margin-bottom:10px">Add one entry per calendar — e.g. <strong>Work</strong> and <strong>Personal</strong>. Each syncs from its own Google “Secret address in iCal format”. Give them different colours to tell them apart.</p>
+      <div id="calList">${(state.calendar.calendars || []).map(calendarRowHTML).join("") || '<p class="hint">No calendars yet.</p>'}</div>
+      <button class="btn btn-sm" type="button" id="calAddRow">＋ Add calendar</button>
+      <p class="hint" style="margin:12px 0 2px">In Google Calendar: Settings → your calendar → <em>Secret address in iCal format</em>. It’s read-only and private to you.</p>
+      <div class="field" style="margin-top:14px"><label for="setProxies">CORS proxies <span class="hint" style="display:inline">(one per line, tried in order)</span></label>
+        <textarea id="setProxies" rows="4" spellcheck="false">${esc(getProxies().join("\n"))}</textarea>
+        <p class="hint">A browser can’t fetch Google’s .ics directly. The dashboard uses the <strong>local server</strong> (start it with <code>Start Dashboard.bat</code>) which proxies the request on your machine — no CORS, no third party. If the server isn’t running it falls back to the public proxies below (flaky). Paste your own proxy to override.</p>
+      </div>
+      <button class="btn btn-sm btn-teal" type="button" id="setSync">Sync now</button>`,
+    news: () => `
+      <p class="hint" style="margin-bottom:10px">Manage curated topics and the no-politics filter.</p>
+      <button class="btn btn-sm btn-tangerine" type="button" id="setTopics">Edit topics &amp; blocklist…</button>
+      <div class="field" style="margin-top:14px"><label for="setBlock">Filter political stories</label>
+        <select id="setBlock">
+          <option value="yes"${state.settings.blockPolitics?" selected":""}>Yes — hide political stories</option>
+          <option value="no"${!state.settings.blockPolitics?" selected":""}>No — show everything</option>
+        </select>
+      </div>`,
+    ai: () => `
+      <p class="hint" style="margin-bottom:10px">Connect <a href="https://gab.ai/docs/api" target="_blank" rel="noopener noreferrer">Gab AI</a> (OpenAI-compatible) to generate project to-do lists from a description. Your key is stored locally and sent only to your own local server, which forwards it to Gab. AI needs the local server running (the desktop app, or <code>Start Dashboard.bat</code>).</p>
+      <div class="field"><label for="setAiKey">Gab API key</label><input id="setAiKey" type="password" value="${esc((state.settings.ai||{}).key || "")}" placeholder="gab_…" autocomplete="off"></div>
+      <div class="field"><label for="setAiModel">Model</label><input id="setAiModel" type="text" value="${esc((state.settings.ai||{}).model || "auto")}" placeholder="auto"></div>
+      <p class="hint">Use <code>auto</code> to let Gab pick a model, or a model id like <code>arya</code>.</p>
+      <button class="btn btn-sm btn-teal" type="button" id="setAiTest">Test connection</button>
+      <span class="hint" id="setAiStatus" style="margin-left:8px"></span>`,
+    vault: () => `
+      <p>Point this at a folder inside your Obsidian vault. The dashboard reads and writes six Markdown files there, so your notes stay plain text and Obsidian stays the source of truth.</p>
+      <ul class="hint" style="margin:10px 0 14px;padding-left:18px">
+        ${VAULT_FILES.map(f => `<li><code>${f}</code></li>`).join("")}
+      </ul>
+      <button class="btn btn-sm btn-teal" type="button" id="setVault">${(dirHandle || state.vault.connected) ? "Reconnect folder…" : "Choose vault folder…"}</button>
+      <button class="btn btn-sm" type="button" id="setReload">Reload from vault</button>
+      <p class="hint" style="margin-top:12px">${state.vault.connected ? "Connected to <strong>" + esc(state.vault.name) + "</strong>." : "Not connected. Files will be created on first save."} ${isDesktop ? "This folder is remembered between launches — no re-authorization needed." : "Needs Chrome or Edge; the folder picker is a browser feature."}</p>`,
+    data: () => `
+      <p class="hint" style="margin-bottom:12px">Everything also lives in this browser’s local storage, so the dashboard works even without a vault.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm" type="button" id="setExportJson">⤓ Export JSON backup</button>
+        <button class="btn btn-sm" type="button" id="setExportMd">⤓ Export Markdown files</button>
+        <button class="btn btn-sm btn-berry" type="button" id="setReset">Reset everything</button>
+      </div>`
+  };
+  function show(id){
+    $("#setupPane").innerHTML = panes[id]();
+    $$("[data-stab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.stab === id)));
+    if(id === "general"){ $("#setName").addEventListener("input", e => { state.profile.name = e.target.value.trim(); save(); renderGreeting(); }); }
+    if(id === "calendar"){
+      if(!Array.isArray(state.calendar.calendars)) state.calendar.calendars = [];
+      $("#calAddRow").addEventListener("click", () => {
+        const n = state.calendar.calendars.length;
+        state.calendar.calendars.push({ id: uid(), name: n ? "Calendar " + (n + 1) : "Work", url: "", color: ["#0fa3a3","#ff6b35","#8ac926","#d7263d","#ffc145"][n % 5], enabled: true });
+        save(); show("calendar");
+      });
+      $("#calList").addEventListener("input", e => {
+        const row = e.target.closest(".cal-row"); if(!row) return;
+        const cal = state.calendar.calendars.find(c => c.id === row.dataset.cid); if(!cal) return;
+        if(e.target.classList.contains("cal-name")) cal.name = e.target.value.trim();
+        else if(e.target.classList.contains("cal-url")) cal.url = e.target.value.trim();
+        else if(e.target.classList.contains("cal-color")) cal.color = e.target.value;
+        save();
+      });
+      $("#calList").addEventListener("click", e => {
+        const del = e.target.closest("[data-cdel]"); if(!del) return;
+        state.calendar.calendars = state.calendar.calendars.filter(c => c.id !== del.dataset.cdel);
+        save(); show("calendar");
+      });
+      $("#setProxies").addEventListener("change", e => { state.settings.proxies = e.target.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean); save(); });
+      $("#setSync").addEventListener("click", () => { state.settings.proxies = $("#setProxies").value.split(/\r?\n/).map(s => s.trim()).filter(Boolean); save(); syncCalendar(); });
+    }
+    if(id === "news"){
+      $("#setTopics").addEventListener("click", () => { closeModal(); newsTopicsDialog(); });
+      $("#setBlock").addEventListener("change", e => { state.settings.blockPolitics = e.target.value === "yes"; save(); renderNews(); });
+    }
+    if(id === "ai"){
+      if(!state.settings.ai) state.settings.ai = { key: "", model: "auto" };
+      $("#setAiKey").addEventListener("input", e => { state.settings.ai.key = e.target.value.trim(); save(); });
+      $("#setAiModel").addEventListener("input", e => { state.settings.ai.model = e.target.value.trim() || "auto"; save(); });
+      $("#setAiTest").addEventListener("click", async () => {
+        const s = $("#setAiStatus"); s.textContent = "Testing…";
+        try{
+          const j = await aiChat({ model: state.settings.ai.model || "auto", messages: [{ role: "user", content: "Reply with the single word: ok" }] });
+          const c = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+          s.textContent = c ? "✓ Connected: " + String(c).trim().slice(0, 40) : "✓ Connected.";
+        }catch(e){ s.textContent = "⚠️ " + (e.message || e); }
+      });
+    }
+    if(id === "vault"){
+      $("#setVault").addEventListener("click", async () => { closeModal(); await connectVault(); });
+      $("#setReload").addEventListener("click", async () => { await vaultLoadAll(); toast("Reloaded from vault."); });
+    }
+    if(id === "data"){
+      $("#setExportJson").addEventListener("click", () => download("morning-brief-backup.json", JSON.stringify(state, null, 2), "application/json"));
+      $("#setExportMd").addEventListener("click", () => {
+        const bundle = VAULT_FILES.map(f => `# ${f}\n\n` + ({
+          "todos.md": serializeTodos, "projects.md": serializeProjects, "hours.md": serializeHours,
+          "shortcuts.md": serializeShortcuts, "news.md": serializeNews, "calendar.md": serializeCalendar
+        }[f])()).join("\n\n---\n\n");
+        download("morning-brief-markdown.md", bundle, "text/markdown");
+      });
+      $("#setReset").addEventListener("click", () => { closeModal(); confirmAction("Reset all dashboard data? This clears browser storage but does not touch your vault files.", () => { localStorage.removeItem(STORE_KEY); location.reload(); }); });
+    }
+  }
+  $$("[data-stab]").forEach(b => b.addEventListener("click", () => show(b.dataset.stab)));
+  show(tab || "general");
+}
+
+/* =========================================================================
+   RENDER ALL + INIT
+   ========================================================================= */
+function renderGreeting(){
+  const h = new Date().getHours();
+  const part = h < 12 ? "morning" : h < 18 ? "afternoon" : "evening";
+  const name = state.profile.name ? ", " + state.profile.name : "";
+  $("#greeting").textContent = `Good ${part}${name}`;
+  const subs = [
+    "Here’s your day at a glance.",
+    "Let’s make something today.",
+    "One panel at a time.",
+    "The feed is warm, the coffee is hot."
+  ];
+  $("#brandSub").textContent = subs[new Date().getDate() % subs.length];
+}
+function renderAll(){
+  renderGreeting();
+  renderCalendar();
+  renderHours();
+  renderShortcuts();
+  renderProjects("work", "#workList");
+  renderProjects("personal", "#personalList");
+  renderTodos();
+  renderNews();
+  updateVaultBtn();
+}
+function tickClock(){
+  const now = new Date();
+  $("#clock").textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  $("#dateline").textContent = now.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+}
+
+/* ---------- wire up events ---------- */
+function wire(){
+  $("#vaultBtn").addEventListener("click", connectVault);
+  $("#setupBtn").addEventListener("click", () => openSetup("general"));
+  $("#calSync").addEventListener("click", syncCalendar);
+  $("#calAdd").addEventListener("click", addManualEvent);
+  $("#calImport").addEventListener("click", () => $("#icsFile").click());
+  $("#icsFile").addEventListener("change", e => { if(e.target.files[0]) importICSFile(e.target.files[0]); e.target.value = ""; });
+  $("#clockToggle").addEventListener("click", toggleClock);
+  $("#hoursLog").addEventListener("click", logTimeManual);
+  $("#scAdd").addEventListener("click", () => shortcutDialog(null));
+  $("#workAdd").addEventListener("click", () => projectDialog("work", null));
+  $("#persAdd").addEventListener("click", () => projectDialog("personal", null));
+  $("#newsRefresh").addEventListener("click", () => refreshNews());
+  $("#newsSettings").addEventListener("click", newsTopicsDialog);
+
+  $("#todoForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const text = $("#todoText").value.trim();
+    if(!text){ toast("Type a task first."); return; }
+    state.todos.unshift({ id: uid(), text, done: false, prio: $("#todoPrio").value, due: "", project: "", created: todayKey() });
+    $("#todoText").value = ""; $("#todoText").focus();
+    save(); renderTodos();
+  });
+
+  // delegated clicks
+  document.addEventListener("click", e => {
+    const open = e.target.closest("[data-open]");
+    if(open){ openShortcut(open.dataset.open); return; }
+    const ed = e.target.closest("[data-edit]");
+    if(ed){ shortcutDialog(state.shortcuts.find(s => s.id === ed.dataset.edit)); return; }
+    const pe = e.target.closest("[data-pedit]");
+    if(pe){ projectDialog(pe.dataset.bucket, state[pe.dataset.bucket].find(p => p.id === pe.dataset.pedit)); return; }
+    const pex = e.target.closest("[data-pexpand]");
+    if(pex){
+      const bucket = pex.dataset.bucket, id = pex.dataset.pexpand;
+      if(!state.ui.openProjects) state.ui.openProjects = {};
+      state.ui.openProjects[id] = !state.ui.openProjects[id];
+      save(); renderProjects(bucket, projectListId(bucket));
+      return;
+    }
+    const pdel = e.target.closest("[data-pdel]");
+    if(pdel){
+      const bucket = pdel.dataset.bucket;
+      const proj = state[bucket].find(p => p.id === pdel.dataset.pid);
+      if(proj){ proj.tasks = (proj.tasks || []).filter(t => t.id !== pdel.dataset.pdel); save(); renderProjects(bucket, projectListId(bucket)); }
+      return;
+    }
+    const del = e.target.closest("[data-del]");
+    if(del){
+      const t = state.todos.find(x => x.id === del.dataset.del);
+      state.todos = state.todos.filter(x => x.id !== del.dataset.del);
+      save(); renderTodos();
+      if(t) toast("Deleted: " + t.text);
+      return;
+    }
+    const tab = e.target.closest("[data-topic]");
+    if(tab){ state.news.activeTopic = tab.dataset.topic; save(); renderNews(); return; }
+    if(e.target.id === "scAddTile"){ shortcutDialog(null); return; }
+  });
+  document.addEventListener("change", e => {
+    const tg = e.target.closest("[data-toggle]");
+    if(tg){
+      const t = state.todos.find(x => x.id === tg.dataset.toggle);
+      if(t){ t.done = tg.checked; save(); renderTodos(); }
+      return;
+    }
+    const pt = e.target.closest("[data-ptoggle]");
+    if(pt){
+      const bucket = pt.dataset.bucket;
+      const proj = state[bucket].find(p => p.id === pt.dataset.pid);
+      const task = proj && (proj.tasks || []).find(t => t.id === pt.dataset.ptoggle);
+      if(task){ task.done = pt.checked; save(); renderProjects(bucket, projectListId(bucket)); }
+    }
+  });
+  document.addEventListener("input", e => {
+    const pr = e.target.closest("[data-prename]");
+    if(!pr) return;
+    const proj = state[pr.dataset.bucket].find(p => p.id === pr.dataset.pid);
+    const task = proj && (proj.tasks || []).find(t => t.id === pr.dataset.prename);
+    if(task){ task.text = pr.value; save(); }
+  });
+  document.addEventListener("submit", e => {
+    const form = e.target.closest("[data-padd]");
+    if(!form) return;
+    e.preventDefault();
+    const input = form.querySelector("input");
+    const text = (input && input.value || "").trim();
+    if(!text) return;
+    const bucket = form.dataset.bucket;
+    const proj = state[bucket].find(p => p.id === form.dataset.padd);
+    if(!proj) return;
+    if(!Array.isArray(proj.tasks)) proj.tasks = [];
+    proj.tasks.push({ id: uid(), text, done: false });
+    save(); renderProjects(bucket, projectListId(bucket));
+    const ni = $(projectListId(bucket)).querySelector(`[data-padd="${proj.id}"] input`);
+    if(ni) ni.focus();
+  });
+}
+
+/* ---------- boot ---------- */
+function boot(){
+  state = loadState();
+  // Migration: single calendar URL → list of calendars (work, personal, …).
+  if(!Array.isArray(state.calendar.calendars)) state.calendar.calendars = [];
+  if(state.calendar.icsUrl && !state.calendar.calendars.length){
+    state.calendar.calendars.push({ id: uid(), name: "Google Calendar", url: state.calendar.icsUrl, color: "#0fa3a3", enabled: true });
+  }
+  delete state.calendar.icsUrl;
+  // Migration: adopt the local companion server as the proxy if this saved
+  // config predates it (and drop the old, now-dead public default).
+  if(!Array.isArray(state.settings.proxies)) state.settings.proxies = [];
+  if(!state.settings.proxies.includes(LOCAL_PROXY)) state.settings.proxies.unshift(LOCAL_PROXY);
+  if(!state.settings.proxy || state.settings.proxy === "https://api.allorigins.win/raw?url=") state.settings.proxy = LOCAL_PROXY;
+  // Migration guard: make sure topics have items arrays.
+  state.news.topics = state.news.topics.map(t => ({ items: [], lastFetch: null, ...t }));
+  if(!state.news.topics.length) state.news.topics = defaultState().news.topics;
+  if(!state.news.activeTopic || !state.news.topics.find(t => t.id === state.news.activeTopic)) state.news.activeTopic = state.news.topics[0].id;
+  // Migration: rework work hours into a weekly timesheet (entries + history).
+  const prevWeek = state.hours.weekStart;
+  const hadEntries = Array.isArray(state.hours.entries) && state.hours.entries.length > 0;
+  state.hours = normalizeHours(state.hours);
+  const rolledOver = !!(prevWeek && prevWeek !== state.hours.weekStart && hadEntries);
+  // Migration: projects gain a task list; AI settings and expand state defaults.
+  ["work","personal"].forEach(b => (state[b] || []).forEach(p => { if(!Array.isArray(p.tasks)) p.tasks = []; }));
+  if(!state.settings.ai) state.settings.ai = { key: "", model: "auto" };
+  if(!state.ui.openProjects) state.ui.openProjects = {};
+
+  wire();
+  renderAll();
+  tickClock();
+  setInterval(tickClock, 15000);
+  setInterval(tickTimer, 1000);
+  setInterval(() => { renderHours(); renderCalendar(); }, 60000);
+  restoreVault();
+
+  if(rolledOver){
+    save();
+    setTimeout(() => toast("📅 New week — last week’s hours were archived to History."), 1200);
+  }
+
+  // Detect the local companion server (enables desktop app/file launching).
+  pingServer();
+  setInterval(pingServer, 20000);
+
+  // Freeze decorative animation while idle, so a screen that's just being
+  // watched (e.g. over Moonlight) can go fully idle instead of encoding every
+  // frame. Any input resumes it.
+  let motionIdleTimer;
+  const markActivity = () => {
+    document.documentElement.classList.remove("motion-idle");
+    clearTimeout(motionIdleTimer);
+    motionIdleTimer = setTimeout(() => document.documentElement.classList.add("motion-idle"), 15000);
+  };
+  ["pointermove", "pointerdown", "keydown", "wheel", "touchstart"].forEach(ev =>
+    window.addEventListener(ev, markActivity, { passive: true }));
+  markActivity();
+
+  // Cloud: sign-in button + state sync + PWA service worker.
+  if(isCloud && window.mbCloud){
+    const authBtn = $("#authBtn");
+    if(authBtn){
+      authBtn.style.display = "";
+      authBtn.textContent = window.mbCloud.auth.user() ? "👤 " + String(window.mbCloud.auth.user().email).split("@")[0] : "Sign in";
+      window.mbCloud.auth.onChange(u => { authBtn.textContent = u ? "👤 " + String(u.email).split("@")[0] : "Sign in"; });
+      window.mbCloud.sync.onChange(s => { authBtn.title = "Cloud sync: " + s; });
+      authBtn.addEventListener("click", authDialog);
+    }
+    window.mbCloud.sync.start({
+      getState: () => state,
+      setState: (s) => {
+        state = deepMerge(defaultState(), s || {});
+        try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
+        renderAll();
+      }
+    });
+    if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
+  }
+
+  // Gentle first-run nudge
+  if(!state.vault.connected && !localStorage.getItem("morning-brief.seen")){
+    localStorage.setItem("morning-brief.seen", "1");
+    setTimeout(() => toast(isDesktop
+      ? "👋 New here? Click Setup to add your name and Google Calendar link, or Connect Vault to sync your notes."
+      : "👋 New here? Click Setup to add your name and Google Calendar link."), 900);
+  }
+}
+document.addEventListener("DOMContentLoaded", boot);
+</script>
+</body>
+</html>
