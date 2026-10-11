@@ -8,7 +8,7 @@
 <meta name="color-scheme" content="light">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Karla:ital,wght@0,400..700;1,400..600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Caveat:wght@400..700&family=Karla:ital,wght@0,400..700;1,400..600&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    Morning Brief — daily dashboard
@@ -413,13 +413,6 @@ textarea{resize:vertical;min-height:70px}
   border-bottom:1px solid #000;
 }
 [data-theme="retro"] .panel-head h2{font-size:1rem;font-weight:800;gap:6px}
-[data-theme="retro"] .panel-head::before,
-[data-theme="retro"] .panel-head::after{
-  content:"";position:absolute;top:50%;width:11px;height:11px;
-  background:#fff;border:1px solid #000;transform:translateY(-50%);
-}
-[data-theme="retro"] .panel-head::before{left:7px}
-[data-theme="retro"] .panel-head::after{right:7px}
 [data-theme="retro"] .icon-badge{
   width:24px;height:24px;border:1px solid #000;border-radius:2px;box-shadow:none;background:#fff;font-size:.9rem;
 }
@@ -476,12 +469,192 @@ textarea{resize:vertical;min-height:70px}
   background-image:repeating-linear-gradient(180deg,rgba(0,0,0,.18) 0 1px,transparent 1px 4px);
   border-bottom:1px solid #000;
 }
-[data-theme="retro"] .modal-card h3::before,
-[data-theme="retro"] .modal-card h3::after{content:"";position:absolute;top:50%;width:11px;height:11px;background:#fff;border:1px solid #000;transform:translateY(-50%)}
-[data-theme="retro"] .modal-card h3::before{left:7px}
-[data-theme="retro"] .modal-card h3::after{right:7px}
 [data-theme="retro"] .toast{border-radius:0;border:1px solid #000}
 [data-theme="retro"] .foot code{background:#e6e6e6}
+
+/* =========================================================================
+   Windows 95 theme — [data-theme="win95"]
+   ========================================================================= */
+[data-theme="win95"]{
+  --ink:#000; --ink-soft:#404040;
+  --paper:#c0c0c0; --paper-2:#d4d0c8; --card:#c0c0c0;
+  --line:#000; --radius:0px; --radius-sm:0px;
+  --shadow:1px 1px 0 rgba(0,0,0,.5);
+  --shadow-sm:1px 1px 0 rgba(0,0,0,.5);
+  --shadow-press:0 0 0 rgba(0,0,0,0);
+  --font-display:"MS Sans Serif",Tahoma,Geneva,Verdana,sans-serif;
+  --font-body:"MS Sans Serif",Tahoma,Geneva,Verdana,sans-serif;
+}
+[data-theme="win95"] body{background:#008080;background-attachment:scroll}
+[data-theme="win95"] .eyebrow{color:#000}
+[data-theme="win95"] .brand-sub{color:#1a1a1a}
+[data-theme="win95"] .panel{background:#c0c0c0;border:1px solid #000;border-radius:0;box-shadow:inset 1px 1px 0 #dfdfdf,inset -1px -1px 0 #808080;padding:2px 2px 10px}
+[data-theme="win95"] .panel-head{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;margin:0 0 10px;padding:3px 6px;min-height:20px;border-bottom:0}
+[data-theme="win95"] .panel-head h2{color:#fff;font-size:.92rem;font-weight:700;gap:6px}
+[data-theme="win95"] .panel-head .hours-week{color:#fff;opacity:.85}
+[data-theme="win95"] .icon-badge{width:20px;height:20px;border:1px solid #000;border-radius:0;box-shadow:none;background:#c0c0c0;font-size:.78rem}
+[data-theme="win95"] .chip{border:1px solid #000;border-radius:0;background:#c0c0c0}
+[data-theme="win95"] .clockbox{background:#c0c0c0;color:#000;border:1px solid #000;border-radius:0;box-shadow:inset 1px 1px 0 #dfdfdf,inset -1px -1px 0 #808080}
+[data-theme="win95"] .dateline{color:#000}
+[data-theme="win95"] .clock{font-size:clamp(1.3rem,2.6vw,1.8rem)}
+[data-theme="win95"] .btn{background:#c0c0c0;color:#000;border:1px solid #000;border-radius:0;box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #808080;padding:5px 12px;font-family:var(--font-body);font-weight:400}
+[data-theme="win95"] .btn:hover{transform:none;background:#d4d0c8}
+[data-theme="win95"] .btn:active{transform:none;box-shadow:inset 1px 1px 0 #808080,inset -1px -1px 0 #fff}
+[data-theme="win95"] .btn-teal,[data-theme="win95"] .btn-tangerine,[data-theme="win95"] .btn-marigold,[data-theme="win95"] .btn-berry,[data-theme="win95"] .btn-ghost{background:#c0c0c0;color:#000}
+[data-theme="win95"] .btn-teal{box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #808080,0 0 0 1px #000}
+[data-theme="win95"] input[type=text],[data-theme="win95"] input[type=url],[data-theme="win95"] input[type=date],[data-theme="win95"] input[type=time],[data-theme="win95"] input[type=number],[data-theme="win95"] input[type=email],[data-theme="win95"] input[type=password],[data-theme="win95"] select,[data-theme="win95"] textarea{border:1px solid #000;border-radius:0;background:#fff;box-shadow:inset 1px 1px 0 #808080,inset -1px -1px 0 #dfdfdf}
+[data-theme="win95"] .tab{border:1px solid #000;border-radius:0;background:#c0c0c0}
+[data-theme="win95"] .tab[aria-selected=true]{background:#000080;color:#fff}
+[data-theme="win95"] .tag{border:1px solid #000;border-radius:0;background:#c0c0c0}
+[data-theme="win95"] .tag.prio-high{background:#000080;color:#fff}
+[data-theme="win95"] .tag.prio-med{background:#c0c0c0}
+[data-theme="win95"] .tag.prio-low{background:#dfdfdf}
+[data-theme="win95"] .todo,[data-theme="win95"] .news-item,[data-theme="win95"] .project,[data-theme="win95"] .cal-row,[data-theme="win95"] .ptask-text,[data-theme="win95"] .ptask-edit-row .ptask-text{border:1px solid #000;border-radius:0;background:#fff;box-shadow:none}
+[data-theme="win95"] .next-meeting{background:#000080;color:#fff;border:1px solid #000;border-radius:0;box-shadow:none}
+[data-theme="win95"] .next-meeting.is-clear{background:#008080}
+[data-theme="win95"] .event{border:1px solid #000;border-radius:0}
+[data-theme="win95"] .event.now{background:#ffff99}
+[data-theme="win95"] .progress{border:1px solid #000;border-radius:0;background:#fff}
+[data-theme="win95"] .progress > span{border-radius:0;background:#000080}
+[data-theme="win95"] .shortcut .tile{border:1px solid #000;border-radius:0;box-shadow:1px 1px 0 rgba(0,0,0,.4)}
+[data-theme="win95"] table.ts th,[data-theme="win95"] table.ts td{border:1px solid #000}
+[data-theme="win95"] table.ts thead th{background:#c0c0c0}
+[data-theme="win95"] table.ts tr.ts-clientrow td{background:#d4d0c8}
+[data-theme="win95"] table.ts tr.ts-grand td{background:#dfdfdf}
+[data-theme="win95"] .modal{background:rgba(0,0,0,.5)}
+[data-theme="win95"] .modal-card{background:#c0c0c0;border:1px solid #000;border-radius:0;box-shadow:inset 1px 1px 0 #dfdfdf,inset -1px -1px 0 #808080;padding:0 16px 16px}
+[data-theme="win95"] .modal-card h3{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;margin:2px -14px 12px;padding:4px 8px;font-size:.95rem}
+[data-theme="win95"] .toast{border-radius:0;border:1px solid #000}
+[data-theme="win95"] .foot code{background:#d4d0c8}
+
+/* =========================================================================
+   Windows XP theme — [data-theme="winxp"]
+   ========================================================================= */
+[data-theme="winxp"]{
+  --ink:#000; --ink-soft:#4a4a4a;
+  --paper:#ece9d8; --paper-2:#f7f5ee; --card:#ffffff;
+  --line:#0831d9; --radius:8px; --radius-sm:5px;
+  --shadow:0 2px 8px rgba(0,0,0,.35);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.3);
+  --shadow-press:0 1px 2px rgba(0,0,0,.2);
+  --font-display:"Trebuchet MS",Tahoma,Verdana,sans-serif;
+  --font-body:Tahoma,"Trebuchet MS",Verdana,sans-serif;
+}
+[data-theme="winxp"] body{background:linear-gradient(180deg,#2a5a8f 0%,#3f7fb5 35%,#79b25f 70%,#5aa03f 100%);background-attachment:scroll}
+[data-theme="winxp"] .eyebrow{color:#0a3d91}
+[data-theme="winxp"] .brand-sub{color:#26456e}
+[data-theme="winxp"] .panel{background:#fff;border:1px solid #0831d9;border-radius:9px 9px 5px 5px;box-shadow:0 3px 10px rgba(0,0,0,.35);padding:0 12px 14px}
+[data-theme="winxp"] .panel-head{background:linear-gradient(180deg,#0058ee 0%,#3a93ff 9%,#0054e3 45%,#0054e3 88%,#0046c7 100%);color:#fff;border-radius:8px 8px 0 0;margin:0 -12px 12px;padding:5px 10px;border-bottom:1px solid #0831d9}
+[data-theme="winxp"] .panel-head h2{color:#fff;font-size:1rem;font-weight:700;gap:6px;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+[data-theme="winxp"] .panel-head .hours-week{color:#fff;opacity:.9;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+[data-theme="winxp"] .icon-badge{width:22px;height:22px;border:1px solid #0831d9;border-radius:3px;box-shadow:none;background:#fff;font-size:.85rem}
+[data-theme="winxp"] .chip{border:1px solid #0831d9;border-radius:8px;background:#fff}
+[data-theme="winxp"] .clockbox{background:linear-gradient(180deg,#fff,#e8eefb);color:#0a3d91;border:1px solid #0831d9;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+[data-theme="winxp"] .dateline{color:#0a3d91}
+[data-theme="winxp"] .clock{font-size:clamp(1.3rem,2.6vw,1.8rem)}
+[data-theme="winxp"] .btn{background:linear-gradient(180deg,#fff 0%,#f2f6fc 45%,#d6e3f7 46%,#c3d6f0 100%);border:1px solid #7ba7d9;border-radius:4px;color:#000;box-shadow:0 1px 2px rgba(0,0,0,.2),inset 0 0 0 1px #fff;padding:6px 14px}
+[data-theme="winxp"] .btn:hover{transform:none;border-color:#f7b42b;box-shadow:0 0 5px rgba(247,180,43,.8),inset 0 0 0 1px #fff}
+[data-theme="winxp"] .btn:active{transform:none;background:linear-gradient(180deg,#c3d6f0,#e8eefb)}
+[data-theme="winxp"] .btn-teal,[data-theme="winxp"] .btn-tangerine,[data-theme="winxp"] .btn-marigold,[data-theme="winxp"] .btn-berry,[data-theme="winxp"] .btn-ghost{background:linear-gradient(180deg,#fff 0%,#f2f6fc 45%,#d6e3f7 46%,#c3d6f0 100%);color:#000}
+[data-theme="winxp"] .btn-teal{border-color:#f7b42b;font-weight:700}
+[data-theme="winxp"] input[type=text],[data-theme="winxp"] input[type=url],[data-theme="winxp"] input[type=date],[data-theme="winxp"] input[type=time],[data-theme="winxp"] input[type=number],[data-theme="winxp"] input[type=email],[data-theme="winxp"] input[type=password],[data-theme="winxp"] select,[data-theme="winxp"] textarea{border:1px solid #7ba7d9;border-radius:3px;background:#fff;box-shadow:inset 0 1px 2px rgba(0,0,0,.15)}
+[data-theme="winxp"] .tab{border:1px solid #7ba7d9;border-radius:4px;background:linear-gradient(180deg,#fff,#dfe8f7)}
+[data-theme="winxp"] .tab[aria-selected=true]{background:linear-gradient(180deg,#0058ee,#0046c7);color:#fff;border-color:#0831d9}
+[data-theme="winxp"] .tag{border:1px solid #7ba7d9;border-radius:8px;background:#fff}
+[data-theme="winxp"] .tag.prio-high{background:#d7263d;color:#fff}
+[data-theme="winxp"] .tag.prio-med{background:#ffd97a}
+[data-theme="winxp"] .tag.prio-low{background:#d6efc7}
+[data-theme="winxp"] .todo,[data-theme="winxp"] .news-item,[data-theme="winxp"] .project,[data-theme="winxp"] .cal-row,[data-theme="winxp"] .ptask-text,[data-theme="winxp"] .ptask-edit-row .ptask-text{border:1px solid #a9c4e8;border-radius:5px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+[data-theme="winxp"] .next-meeting{background:linear-gradient(180deg,#4a8fd6,#2a6fb8);color:#fff;border:1px solid #0831d9;border-radius:6px;box-shadow:none}
+[data-theme="winxp"] .next-meeting.is-clear{background:linear-gradient(180deg,#7fc46a,#4f9c3e)}
+[data-theme="winxp"] .event{border:1px solid #7ba7d9;border-radius:4px}
+[data-theme="winxp"] .event.now{background:#ffe8b3}
+[data-theme="winxp"] .progress{border:1px solid #7ba7d9;border-radius:8px;background:#fff;box-shadow:inset 0 1px 2px rgba(0,0,0,.15)}
+[data-theme="winxp"] .progress > span{border-radius:8px}
+[data-theme="winxp"] .shortcut .tile{border:1px solid #7ba7d9;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+[data-theme="winxp"] table.ts th,[data-theme="winxp"] table.ts td{border:1px solid #a9c4e8}
+[data-theme="winxp"] table.ts thead th{background:linear-gradient(180deg,#eaf2fd,#cfe0f7)}
+[data-theme="winxp"] table.ts tr.ts-clientrow td{background:#eaf2fd}
+[data-theme="winxp"] table.ts tr.ts-grand td{background:#dbe8f9}
+[data-theme="winxp"] .modal{background:rgba(10,40,90,.55)}
+[data-theme="winxp"] .modal-card{background:#fff;border:1px solid #0831d9;border-radius:9px 9px 5px 5px;box-shadow:0 6px 24px rgba(0,0,0,.45);padding:0 18px 18px}
+[data-theme="winxp"] .modal-card h3{background:linear-gradient(180deg,#0058ee,#0054e3 55%,#0046c7);color:#fff;margin:0 -18px 14px;padding:7px 12px;border-radius:8px 8px 0 0;font-size:1rem;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+[data-theme="winxp"] .toast{border-radius:6px;border:1px solid #0831d9}
+[data-theme="winxp"] .foot code{background:#e8eefb}
+
+/* =========================================================================
+   Notebook & doodles theme — [data-theme="notebook"]
+   ========================================================================= */
+[data-theme="notebook"]{
+  --ink:#2b3a67; --ink-soft:#5a6a86;
+  --paper:#fbf7e9; --paper-2:#f3edd6; --card:#fdfbf1;
+  --line:#c9c2a8; --radius:3px; --radius-sm:3px;
+  --shadow:2px 3px 7px rgba(60,50,30,.28);
+  --shadow-sm:1px 2px 4px rgba(60,50,30,.22);
+  --shadow-press:1px 1px 2px rgba(60,50,30,.2);
+  --font-display:"Caveat","Patrick Hand","Segoe Print","Comic Sans MS",cursive;
+  --font-body:"Caveat","Segoe Print","Comic Sans MS",cursive;
+}
+[data-theme="notebook"] body{
+  background-color:#6b4a2f;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Cpath d='M12 12 L20 30 L40 30 L24 43 L31 63 L14 50 L-3 63 L4 43 L-12 30 L8 30 Z' transform='translate(18,2)' fill='none' stroke='%232b3a67' stroke-width='2' opacity='0.30'/%3E%3C/svg%3E"),
+    radial-gradient(circle at 64px 64px, transparent 44px, rgba(110,70,35,.30) 45px, rgba(110,70,35,.20) 52px, transparent 54px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.10) 0 2px, transparent 2px 7px),
+    linear-gradient(180deg,#7a5535,#5c3f28);
+  background-repeat:no-repeat, no-repeat, repeat, no-repeat;
+  background-size:70px 70px, 150px 150px, auto, cover;
+  background-position:calc(100% - 30px) 24px, 26px calc(100% - 26px), top left, center;
+  background-attachment:scroll;
+}
+[data-theme="notebook"] .eyebrow{color:#e9c98f;font-family:var(--font-display);letter-spacing:.14em}
+[data-theme="notebook"] .brand-sub{color:#e7d8bf}
+[data-theme="notebook"] .brand h1{font-family:var(--font-display);font-weight:700;color:#fdfbf1}
+[data-theme="notebook"] .panel{
+  background:#fdfbf1;
+  background-image:repeating-linear-gradient(180deg, transparent 0 25px, #cdd6ea 25px 26px);
+  border:1px solid #d9d2ba;border-left:3px solid #d9534f;border-radius:2px;
+  box-shadow:2px 4px 10px rgba(40,30,15,.35);
+  padding:8px 14px 16px 20px;
+}
+[data-theme="notebook"] .panel-head{position:relative;background:transparent;border:0;margin:0 0 8px;padding:2px 0;border-bottom:2px solid #b7c2dc}
+[data-theme="notebook"] .panel-head h2{color:#2b3a67;font-family:var(--font-display);font-size:1.55rem;font-weight:700}
+[data-theme="notebook"] .icon-badge{background:transparent;border:0;box-shadow:none;width:auto;height:auto;font-size:1.25rem}
+[data-theme="notebook"] .chip{border:1px dashed #8a97b5;border-radius:3px;background:rgba(255,255,255,.45)}
+[data-theme="notebook"] .clockbox{background:#fdfbf1;color:#2b3a67;border:1px solid #d9d2ba;border-radius:2px;box-shadow:2px 3px 6px rgba(40,30,15,.3);transform:rotate(0.7deg)}
+[data-theme="notebook"] .dateline{color:#8a3b2e}
+[data-theme="notebook"] .clock{font-family:var(--font-display);font-size:clamp(1.6rem,3vw,2.1rem)}
+[data-theme="notebook"] .btn{background:#fbf7e9;color:#2b3a67;border:1.5px solid #2b3a67;border-radius:14px 12px 15px 11px / 12px 15px 11px 14px;box-shadow:1px 2px 0 rgba(43,58,103,.5);font-family:var(--font-display);font-size:1.05rem;font-weight:700;padding:5px 14px}
+[data-theme="notebook"] .btn:hover{transform:rotate(-1deg);box-shadow:2px 3px 0 rgba(43,58,103,.5)}
+[data-theme="notebook"] .btn:active{transform:translate(1px,1px);box-shadow:0 0 0 rgba(43,58,103,.5)}
+[data-theme="notebook"] .btn-teal,[data-theme="notebook"] .btn-tangerine,[data-theme="notebook"] .btn-marigold,[data-theme="notebook"] .btn-berry,[data-theme="notebook"] .btn-ghost{background:#fbf7e9;color:#2b3a67}
+[data-theme="notebook"] .btn-berry{color:#b5372b;border-color:#b5372b}
+[data-theme="notebook"] input[type=text],[data-theme="notebook"] input[type=url],[data-theme="notebook"] input[type=date],[data-theme="notebook"] input[type=time],[data-theme="notebook"] input[type=number],[data-theme="notebook"] input[type=email],[data-theme="notebook"] input[type=password],[data-theme="notebook"] select,[data-theme="notebook"] textarea{border:1.5px solid #8a97b5;border-radius:3px;background:rgba(255,255,255,.7);font-family:var(--font-body);font-size:1.05rem}
+[data-theme="notebook"] .tab{border:1.5px solid #2b3a67;border-radius:12px;background:#fbf7e9;font-family:var(--font-display);font-size:1rem}
+[data-theme="notebook"] .tab[aria-selected=true]{background:#2b3a67;color:#fbf7e9}
+[data-theme="notebook"] .tag{border:1.5px solid #2b3a67;border-radius:10px;background:#fff}
+[data-theme="notebook"] .tag.prio-high{background:#e8b4ac;color:#7a1f16}
+[data-theme="notebook"] .tag.prio-med{background:#f6e3a1}
+[data-theme="notebook"] .tag.prio-low{background:#cfe3bf}
+[data-theme="notebook"] .todo,[data-theme="notebook"] .news-item,[data-theme="notebook"] .project,[data-theme="notebook"] .cal-row,[data-theme="notebook"] .ptask-text,[data-theme="notebook"] .ptask-edit-row .ptask-text{border:1.5px dashed #9aa6c2;border-radius:3px;background:rgba(255,255,255,.55);box-shadow:none;font-family:var(--font-body)}
+[data-theme="notebook"] .next-meeting{background:#eef3e0;color:#2b3a67;border:1.5px solid #8a97b5;border-radius:3px;box-shadow:none}
+[data-theme="notebook"] .next-meeting .nm-title,[data-theme="notebook"] .next-meeting .nm-label,[data-theme="notebook"] .next-meeting .nm-time{color:#2b3a67}
+[data-theme="notebook"] .next-meeting.is-clear{background:#eaf1e0}
+[data-theme="notebook"] .event{border:1.5px solid #8a97b5;border-radius:3px}
+[data-theme="notebook"] .event.now{background:#fbe6c8}
+[data-theme="notebook"] .progress{border:1.5px solid #8a97b5;border-radius:6px;background:#fff}
+[data-theme="notebook"] .progress > span{border-radius:6px;background:#2b3a67}
+[data-theme="notebook"] .shortcut .tile{border:1.5px solid #2b3a67;border-radius:6px;box-shadow:1px 2px 0 rgba(43,58,103,.4)}
+[data-theme="notebook"] table.ts th,[data-theme="notebook"] table.ts td{border:1px solid #b7c2dc}
+[data-theme="notebook"] table.ts thead th{background:#eef1f8}
+[data-theme="notebook"] table.ts tr.ts-clientrow td{background:#f2f0e6}
+[data-theme="notebook"] table.ts tr.ts-grand td{background:#e9e6d8}
+[data-theme="notebook"] .modal{background:rgba(40,25,10,.55)}
+[data-theme="notebook"] .modal-card{background:#fdfbf1;border:1px solid #d9d2ba;border-radius:3px;box-shadow:4px 6px 16px rgba(40,30,15,.4);padding:0 18px 18px}
+[data-theme="notebook"] .modal-card h3{font-family:var(--font-display);font-size:1.55rem;color:#2b3a67;border-bottom:2px solid #b7c2dc;margin:14px 0 12px;padding:0 0 4px}
+[data-theme="notebook"] .toast{border-radius:3px;border:1.5px solid #2b3a67;background:#fdfbf1;color:#2b3a67}
+[data-theme="notebook"] .foot{color:#f0e6d2}
+[data-theme="notebook"] .foot code{background:#f3edd6;color:#2b3a67}
 
 /* ---------- Responsive ---------- */
 @media (max-width:1080px){
@@ -767,8 +940,9 @@ const isDesktop = !!(window.morningBrief && window.morningBrief.version);
 const isCloud = !!(window.mbCloud && window.mbCloud.version);
 
 // Themes are applied via a data-theme attribute on <html>. "default" = none.
+const THEMES = ["retro", "win95", "winxp", "notebook"];
 function applyTheme(t){
-  if(t === "retro") document.documentElement.dataset.theme = "retro";
+  if(THEMES.includes(t)) document.documentElement.dataset.theme = t;
   else document.documentElement.removeAttribute("data-theme");
 }
 let serverOnline = false;
@@ -1963,9 +2137,12 @@ function openSetup(tab){
         <select id="setTheme">
           <option value="default"${(state.settings.theme || "default") === "default" ? " selected" : ""}>Default (colorful)</option>
           <option value="retro"${state.settings.theme === "retro" ? " selected" : ""}>Retro Mac (90s)</option>
+          <option value="win95"${state.settings.theme === "win95" ? " selected" : ""}>Windows 95</option>
+          <option value="winxp"${state.settings.theme === "winxp" ? " selected" : ""}>Windows XP</option>
+          <option value="notebook"${state.settings.theme === "notebook" ? " selected" : ""}>Notebook &amp; doodles</option>
         </select>
       </div>
-      <p class="hint">Applies instantly. “Retro Mac” restyles the panels as classic Mac OS windows.</p>`,
+      <p class="hint">Applies instantly and syncs to your other devices.</p>`,
     calendar: () => `
       <p class="hint" style="margin-bottom:10px">Add one entry per calendar — e.g. <strong>Work</strong> and <strong>Personal</strong>. Each syncs from its own Google “Secret address in iCal format”. Give them different colours to tell them apart.</p>
       <div id="calList">${(state.calendar.calendars || []).map(calendarRowHTML).join("") || '<p class="hint">No calendars yet.</p>'}</div>
