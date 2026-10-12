@@ -1157,34 +1157,101 @@ function icsUnescape(s){
 }
 function parseICSDate(value, params){
   const isDate = /VALUE=DATE(?!-TIME)/i.test(params);
-  const m = value.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?/);
+  const m = String(value || "").match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?/);
   if(!m) return null;
   const [, y, mo, d, h, mi, s, z] = m;
-  if(isDate || !h) return { date: new Date(+y, +mo - 1, +d), allDay: true };
-  if(z) return { date: new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +s)), allDay: false };
-  return { date: new Date(+y, +mo - 1, +d, +h, +mi, +s), allDay: false };
+  if(isDate || !h) return { date: new Date(+y, +mo - 1, +d), allDay: true, utc: false };
+  if(z) return { date: new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +s)), allDay: false, utc: true };
+  return { date: new Date(+y, +mo - 1, +d, +h, +mi, +s), allDay: false, utc: false };
 }
+
+// Expand a single RRULE into occurrence start dates within [winStart, winEnd].
+// Supports DAILY, WEEKLY (BYDAY), MONTHLY (BYMONTHDAY / same day) and YEARLY,
+// with INTERVAL, COUNT and UNTIL. (Google's feed sends the rule, not instances.)
+function rruleExpand(base, utc, rruleStr, winStart, winEnd){
+  const P = {};
+  String(rruleStr).split(";").forEach(kv => { const i = kv.indexOf("="); if(i > 0) P[kv.slice(0, i).toUpperCase()] = kv.slice(i + 1); });
+  const freq = (P.FREQ || "").toUpperCase();
+  if(!freq) return [base];
+  const interval = Math.max(1, parseInt(P.INTERVAL || "1", 10) || 1);
+  const count = P.COUNT ? parseInt(P.COUNT, 10) : Infinity;
+  const untilD = P.UNTIL ? parseICSDate(P.UNTIL, "") : null;
+  const until = untilD ? untilD.date.getTime() : Infinity;
+  const useUTC = !!utc;
+  const mk = (y, mo, d, h, mi, s) => useUTC ? new Date(Date.UTC(y, mo, d, h, mi, s)) : new Date(y, mo, d, h, mi, s);
+  const c = useUTC
+    ? [base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate(), base.getUTCHours(), base.getUTCMinutes(), base.getUTCSeconds()]
+    : [base.getFullYear(), base.getMonth(), base.getDate(), base.getHours(), base.getMinutes(), base.getSeconds()];
+  const [Y, Mo, D, H, Mi, S] = c;
+  const baseMs = base.getTime();
+  const DOW = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
+  const baseDow = useUTC ? base.getUTCDay() : base.getDay();
+  const out = [];
+  let seen = 0;
+  const emit = (d) => {
+    const t = d.getTime();
+    if(t < baseMs - 1000) return;
+    if(t > until) return;
+    seen++;
+    if(t >= winStart - 86400000 && t <= winEnd) out.push(d);
+  };
+  const bail = () => seen >= count || out.length > 4000;
+  if(freq === "DAILY"){
+    for(let k = 0; !bail(); k++){
+      const d = mk(Y, Mo, D + k * interval, H, Mi, S);
+      if(d.getTime() > until || d.getTime() > winEnd) break;
+      emit(d);
+    }
+  } else if(freq === "WEEKLY"){
+    const days = (P.BYDAY ? P.BYDAY.split(",").map(s => DOW[s.trim().toUpperCase()]) : [baseDow]).filter(x => x !== undefined).sort((a, b) => a - b);
+    const wk = new Date(baseMs);
+    const back = (baseDow + 6) % 7;                     // Monday-based week start
+    if(useUTC) wk.setUTCDate(wk.getUTCDate() - back); else wk.setDate(wk.getDate() - back);
+    for(let w = 0; !bail(); w++){
+      const ws = new Date(wk.getTime());
+      if(useUTC) ws.setUTCDate(ws.getUTCDate() + w * 7 * interval); else ws.setDate(ws.getDate() + w * 7 * interval);
+      if(ws.getTime() > winEnd + 7 * 86400000) break;
+      for(const dow of days){
+        const d = new Date(ws.getTime());
+        const cd = useUTC ? d.getUTCDay() : d.getDay();
+        const delta = (dow - cd + 7) % 7;
+        if(useUTC) d.setUTCDate(d.getUTCDate() + delta); else d.setDate(d.getDate() + delta);
+        const occ = mk(useUTC ? d.getUTCFullYear() : d.getFullYear(), useUTC ? d.getUTCMonth() : d.getMonth(), useUTC ? d.getUTCDate() : d.getDate(), H, Mi, S);
+        emit(occ);
+        if(bail()) break;
+      }
+      if(w > 600) break;
+    }
+  } else if(freq === "MONTHLY"){
+    const mdays = P.BYMONTHDAY ? P.BYMONTHDAY.split(",").map(x => parseInt(x, 10)).filter(n => n) : null;
+    for(let k = 0; !bail(); k++){
+      const mo = Mo + k * interval;
+      const yy = Y + Math.floor(mo / 12);
+      const mm = ((mo % 12) + 12) % 12;
+      if(mk(yy, mm, 1, H, Mi, S).getTime() > winEnd + 40 * 86400000) break;
+      (mdays || [D]).forEach(md => emit(mk(yy, mm, md, H, Mi, S)));
+      if(k > 600) break;
+    }
+  } else if(freq === "YEARLY"){
+    for(let k = 0; !bail(); k++){
+      const d = mk(Y + k * interval, Mo, D, H, Mi, S);
+      if(d.getTime() > until || d.getTime() > winEnd) break;
+      emit(d);
+    }
+  } else {
+    return [base];
+  }
+  return out;
+}
+
 function parseICS(text){
   const lines = unfoldICS(text).split("\n");
-  const events = [];
+  const raw = [];
   let cur = null;
   for(const line of lines){
-    if(line === "BEGIN:VEVENT"){ cur = {}; continue; }
+    if(line === "BEGIN:VEVENT"){ cur = { exdates: [] }; continue; }
     if(line === "END:VEVENT"){
-      if(cur && cur.dtstart){
-        const start = cur.dtstart.date;
-        let end = cur.dtend ? cur.dtend.date : new Date(start.getTime() + (cur.dtstart.allDay ? 0 : 3600000));
-        events.push({
-          id: cur.uid || uid(),
-          title: cur.summary || "(untitled)",
-          location: cur.location || "",
-          start: start.toISOString(),
-          end: end.toISOString(),
-          allDay: !!cur.dtstart.allDay,
-          date: todayKey(start),
-          source: "google"
-        });
-      }
+      if(cur && cur.dtstart) raw.push(cur);
       cur = null; continue;
     }
     if(!cur) continue;
@@ -1199,8 +1266,61 @@ function parseICS(text){
     else if(K === "LOCATION") cur.location = icsUnescape(val);
     else if(K === "DTSTART") cur.dtstart = parseICSDate(val, params.join(";"));
     else if(K === "DTEND") cur.dtend = parseICSDate(val, params.join(";"));
+    else if(K === "RRULE") cur.rrule = val.trim();
+    else if(K === "RECURRENCE-ID") cur.recurrenceId = parseICSDate(val, params.join(";"));
+    else if(K === "EXDATE"){ val.split(",").forEach(v => { const d = parseICSDate(v.trim(), params.join(";")); if(d) cur.exdates.push(d); }); }
   }
-  return events;
+
+  const now = Date.now();
+  const winStart = now - 45 * 86400000;
+  const winEnd = now + 120 * 86400000;
+  const overrides = {};
+  const masters = [];
+  raw.forEach(r => {
+    if(r.recurrenceId){ (overrides[r.uid] = overrides[r.uid] || []).push(r); }
+    else masters.push(r);
+  });
+  const mkEvent = (r, start, end, suffix) => ({
+    id: (r.uid || uid()) + (suffix || ""),
+    title: r.summary || "(untitled)",
+    location: r.location || "",
+    start: start.toISOString(),
+    end: end.toISOString(),
+    allDay: !!r.dtstart.allDay,
+    date: todayKey(start),
+    source: "google"
+  });
+
+  const out = [];
+  masters.forEach(r => {
+    const start = r.dtstart.date;
+    const end = r.dtend ? r.dtend.date : new Date(start.getTime() + (r.dtstart.allDay ? 0 : 3600000));
+    const dur = Math.max(0, end.getTime() - start.getTime());
+    if(!r.rrule){ out.push(mkEvent(r, start, end)); return; }
+    const ovs = overrides[r.uid] || [];
+    const exset = new Set(r.exdates.map(d => d.date.getTime()));
+    const starts = rruleExpand(start, r.dtstart.utc, r.rrule, winStart, winEnd);
+    const usedOverrides = new Set();
+    starts.forEach(st => {
+      const t = st.getTime();
+      if(exset.has(t)) return;
+      const ov = ovs.find(o => o.recurrenceId && o.recurrenceId.date.getTime() === t);
+      if(ov){
+        usedOverrides.add(ov);
+        const os = ov.dtstart.date, oe = ov.dtend ? ov.dtend.date : new Date(os.getTime() + dur);
+        out.push(mkEvent(ov, os, oe, "-o"));
+      } else {
+        out.push(mkEvent(r, st, new Date(st.getTime() + dur), "@" + t));
+      }
+    });
+    // Overrides whose original instance fell outside the window are still shown.
+    ovs.forEach(o => {
+      if(usedOverrides.has(o)) return;
+      const os = o.dtstart.date, oe = o.dtend ? o.dtend.date : new Date(os.getTime() + dur);
+      out.push(mkEvent(o, os, oe, "-o"));
+    });
+  });
+  return out;
 }
 
 function allEventsForDay(key){
