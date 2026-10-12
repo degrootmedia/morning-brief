@@ -187,8 +187,8 @@ main{max-width:1360px;margin:0 auto;padding:0 clamp(12px,3vw,28px)}
 .p-shortcuts{grid-column:span 4;--tile:var(--tangerine)}
 .p-work{grid-column:span 6;--tile:var(--berry)}
 .p-personal{grid-column:span 6;--tile:var(--lime)}
-.p-todos{grid-column:span 5;--tile:var(--marigold)}
-.p-news{grid-column:span 7;--tile:var(--teal)}
+.p-todos{grid-column:span 6;--tile:var(--marigold)}
+.p-news{grid-column:span 6;--tile:var(--teal)}
 .p-notes{grid-column:span 6;--tile:var(--lime)}
 
 /* ---------- Calendar ---------- */
@@ -284,9 +284,9 @@ table.ts tr.ts-clientrow .ts-client-total{float:right;font-variant-numeric:tabul
 .panel-head{cursor:grab;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .panel-head:active{cursor:grabbing}
 .is-sorting{cursor:grabbing}
-.sorting{opacity:.55;outline:3px dashed var(--berry);outline-offset:3px;z-index:5}
-.shortcut.sorting .tile{transform:none;box-shadow:inset 0 3px 0 #ffffffb0,inset 0 -8px 14px #00000022,4px 4px 0 var(--ink)}
-.panel.sorting{opacity:.7}
+.sorting{position:fixed !important;z-index:9999;pointer-events:none;opacity:.97;
+  box-shadow:0 16px 40px rgba(0,0,0,.4),0 4px 12px rgba(0,0,0,.3);transition:none}
+.sort-placeholder{border:2px dashed var(--berry);border-radius:var(--radius-sm);background:transparent;opacity:.5;pointer-events:none}
 
 /* ---------- Projects ---------- */
 .project-list{display:flex;flex-direction:column;gap:10px;overflow:auto;max-height:320px}
@@ -572,8 +572,9 @@ textarea{resize:vertical;min-height:70px}
   --font-body:Tahoma,"Trebuchet MS",Verdana,sans-serif;
 }
 [data-theme="winxp"] body{background:linear-gradient(180deg,#2a5a8f 0%,#3f7fb5 35%,#79b25f 70%,#5aa03f 100%);background-attachment:scroll}
-[data-theme="winxp"] .eyebrow{color:#0a3d91}
-[data-theme="winxp"] .brand-sub{color:#26456e}
+[data-theme="winxp"] .brand h1{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+[data-theme="winxp"] .eyebrow{color:#ffe08a;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+[data-theme="winxp"] .brand-sub{color:#e6f0ff;text-shadow:0 1px 1px rgba(0,0,0,.4)}
 [data-theme="winxp"] .panel{background:#fff;border:1px solid #0831d9;border-radius:9px 9px 5px 5px;box-shadow:0 3px 10px rgba(0,0,0,.35);padding:0 12px 14px}
 [data-theme="winxp"] .panel-head{background:linear-gradient(180deg,#0058ee 0%,#3a93ff 9%,#0054e3 45%,#0054e3 88%,#0046c7 100%);color:#fff;border-radius:8px 8px 0 0;margin:0 -12px 12px;padding:5px 10px;border-bottom:1px solid #0831d9}
 [data-theme="winxp"] .panel-head h2{color:#fff;font-size:1rem;font-weight:700;gap:6px;text-shadow:0 1px 1px rgba(0,0,0,.4)}
@@ -2589,20 +2590,50 @@ function makeSortable(container, opts){
     if(!best) return null;
     const b = best.getBoundingClientRect();
     const after = y > b.top + b.height / 2 || x > b.left + b.width / 2;
-    return after ? best.nextSibling : best;
+    let node = after ? best.nextSibling : best;
+    if(node === st.item) node = after ? st.item.nextSibling : st.item.previousSibling;
+    return node;
   };
 
   function begin(){
     if(!st || st.started) return;
     st.started = true;
     clearTimeout(st.timer);
-    st.item.classList.add("sorting");
+    const item = st.item;
+    const r = item.getBoundingClientRect();
+    st.offsetX = st.startX - r.left;
+    st.offsetY = st.startY - r.top;
+    // Reserve the item's slot with a placeholder so the rest of the grid stays
+    // put while the real item floats under the pointer — no reflow jitter.
+    const ph = document.createElement("div");
+    ph.className = "sort-placeholder";
+    ph.style.width = r.width + "px";
+    ph.style.height = r.height + "px";
+    const gc = getComputedStyle(item).gridColumn;
+    if(gc && gc !== "auto") ph.style.gridColumn = gc;
+    item.parentNode.insertBefore(ph, item);
+    st.placeholder = ph;
+    item.classList.add("sorting");
+    item.style.left = r.left + "px";
+    item.style.top = r.top + "px";
+    item.style.width = r.width + "px";
+    item.style.height = r.height + "px";
+    try{ item.setPointerCapture(st.id); }catch(_){}
     document.body.classList.add("is-sorting");
+  }
+  function resetItem(item){
+    if(!item) return;
+    item.classList.remove("sorting");
+    item.style.left = "";
+    item.style.top = "";
+    item.style.width = "";
+    item.style.height = "";
   }
   function cleanup(){
     if(!st) return;
     clearTimeout(st.timer);
-    if(st.item) st.item.classList.remove("sorting");
+    if(st.placeholder && st.placeholder.parentNode) st.placeholder.remove();
+    resetItem(st.item);
     document.body.classList.remove("is-sorting");
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
@@ -2620,6 +2651,13 @@ function makeSortable(container, opts){
     setTimeout(() => document.removeEventListener("click", handler, true), 450);
   }
   function touchMove(e){ if(st && st.started && e.cancelable) e.preventDefault(); }
+  function moveItem(x, y){
+    st.item.style.left = (x - st.offsetX) + "px";
+    st.item.style.top = (y - st.offsetY) + "px";
+    let before = beforeEl(x, y);
+    if(before == null && opts.endAnchorSel) before = container.querySelector(opts.endAnchorSel);
+    if(before !== st.placeholder) container.insertBefore(st.placeholder, before);
+  }
   function onMove(e){
     if(!st || e.pointerId !== st.id) return;
     const dx = e.clientX - st.startX, dy = e.clientY - st.startY;
@@ -2632,12 +2670,14 @@ function makeSortable(container, opts){
       begin();
     }
     if(e.cancelable) e.preventDefault();
-    const before = beforeEl(e.clientX, e.clientY);
-    if(before && before !== st.item) container.insertBefore(st.item, before);
+    moveItem(e.clientX, e.clientY);
   }
   function onUp(e){
     if(!st || (e.pointerId != null && e.pointerId !== st.id)) return;
     const did = st.started;
+    if(did && st.placeholder && st.placeholder.parentNode){
+      st.placeholder.parentNode.insertBefore(st.item, st.placeholder);
+    }
     cleanup();
     if(did){ swallowClick(); onCommit(); }
   }
@@ -2649,7 +2689,8 @@ function makeSortable(container, opts){
     if(handleSel && !e.target.closest(handleSel)) return;
     st = {
       item, id: e.pointerId, isTouch: e.pointerType !== "mouse",
-      startX: e.clientX, startY: e.clientY, started: false, timer: null
+      startX: e.clientX, startY: e.clientY, started: false, timer: null,
+      placeholder: null, offsetX: 0, offsetY: 0
     };
     if(st.isTouch) st.timer = setTimeout(begin, HOLD_MS);
     window.addEventListener("pointermove", onMove, { passive: false });
@@ -2704,7 +2745,7 @@ function wire(){
     state.shortcuts = state.shortcuts.map(s => visible.has(s.id) ? byId.get(queue.shift()) : s).filter(Boolean);
     save();
   };
-  makeSortable(scGrid, { itemSel: ".shortcut[data-id]", onCommit: commitShortcutOrder });
+  makeSortable(scGrid, { itemSel: ".shortcut[data-id]", endAnchorSel: "#scAddTile", onCommit: commitShortcutOrder });
 
   // Panels: drag the header to rearrange the dashboard. Order is persisted.
   const dashGrid = $(".grid");
