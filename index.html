@@ -189,6 +189,7 @@ main{max-width:1360px;margin:0 auto;padding:0 clamp(12px,3vw,28px)}
 .p-personal{grid-column:span 6;--tile:var(--lime)}
 .p-todos{grid-column:span 5;--tile:var(--marigold)}
 .p-news{grid-column:span 7;--tile:var(--teal)}
+.p-notes{grid-column:span 6;--tile:var(--lime)}
 
 /* ---------- Calendar ---------- */
 .next-meeting{
@@ -251,7 +252,7 @@ table.ts tr.ts-clientrow .ts-client-total{float:right;font-variant-numeric:tabul
 .shortcut{
   position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;
   background:transparent;border:none;cursor:pointer;padding:4px;border-radius:14px;
-  text-decoration:none;color:var(--ink);
+  text-decoration:none;color:var(--ink);-webkit-user-select:none;user-select:none;
 }
 .shortcut .tile{
   width:58px;height:58px;display:grid;place-items:center;font-size:1.7rem;
@@ -266,11 +267,26 @@ table.ts tr.ts-clientrow .ts-client-total{float:right;font-variant-numeric:tabul
 .shortcut .sc-edit{
   position:absolute;top:-4px;right:-2px;opacity:0;
   width:22px;height:22px;border-radius:50%;border:2px solid var(--ink);
-  background:var(--card);font-size:.7rem;line-height:1;display:grid;place-items:center;
+  background:var(--card);display:grid;place-items:center;padding:0;
   cursor:pointer;transition:opacity .12s ease;
 }
+.shortcut .sc-edit svg{width:11px;height:11px;display:block;pointer-events:none}
 .shortcut:hover .sc-edit,.shortcut:focus-within .sc-edit{opacity:1}
+.shortcut .tile .sc-icon-img{width:72%;height:72%;object-fit:contain;display:block;border-radius:6px}
+.sc-img-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.sc-img-preview{width:48px;height:48px;object-fit:contain;border:2px solid var(--ink);border-radius:10px;background:var(--card);padding:2px}
+.sc-img-actions{display:flex;gap:8px;flex-wrap:wrap}
 .shortcut-add .tile{background:repeating-linear-gradient(45deg,#fff5e6,#fff5e6 6px,#ffe6c7 6px,#ffe6c7 12px)}
+
+/* ---------- Drag to reorder (shortcuts + panels) ---------- */
+.shortcut[data-id]{cursor:grab;touch-action:manipulation}
+.shortcut[data-id]:active{cursor:grabbing}
+.panel-head{cursor:grab;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.panel-head:active{cursor:grabbing}
+.is-sorting{cursor:grabbing}
+.sorting{opacity:.55;outline:3px dashed var(--berry);outline-offset:3px;z-index:5}
+.shortcut.sorting .tile{transform:none;box-shadow:inset 0 3px 0 #ffffffb0,inset 0 -8px 14px #00000022,4px 4px 0 var(--ink)}
+.panel.sorting{opacity:.7}
 
 /* ---------- Projects ---------- */
 .project-list{display:flex;flex-direction:column;gap:10px;overflow:auto;max-height:320px}
@@ -305,6 +321,17 @@ table.ts tr.ts-clientrow .ts-client-total{float:right;font-variant-numeric:tabul
 .ptask-edit-row{display:flex;align-items:center;gap:7px}
 .ptask-edit-row input[type=checkbox]{width:18px;height:18px;flex:0 0 auto;accent-color:var(--teal)}
 .ptask-edit-row .ptask-text{flex:1 1 auto;min-width:0;border:2px solid var(--ink);background:#fff;border-radius:8px;padding:5px 8px;font:inherit;color:inherit}
+
+/* ---------- Notes ---------- */
+.note-list{display:flex;flex-direction:column;gap:10px;overflow:auto;max-height:340px}
+.note{border:2px solid var(--ink);border-radius:var(--radius-sm);padding:10px 12px;background:var(--paper)}
+.note-top{display:flex;align-items:center;gap:8px}
+.n-toggle{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;background:none;border:none;padding:0;cursor:pointer;color:inherit;font:inherit;text-align:left}
+.n-toggle .p-caret{font-size:.8rem;color:var(--ink-soft);flex:0 0 auto}
+.n-title{font-weight:800;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.note-body{margin-top:9px;padding-top:9px;border-top:2px dashed var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;font-size:.9rem;line-height:1.5}
+.note-date{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-top:6px}
+[data-theme="win95"] .note{border:1px solid #000;border-radius:0;background:#fff;box-shadow:none}
 
 /* ---------- Todos ---------- */
 .todo-form{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
@@ -492,8 +519,8 @@ textarea{resize:vertical;min-height:70px}
 [data-theme="win95"] body{background:#008080;background-attachment:scroll}
 [data-theme="win95"] .eyebrow{color:#000}
 [data-theme="win95"] .brand-sub{color:#1a1a1a}
-[data-theme="win95"] .panel{background:#c0c0c0;border:1px solid #000;border-radius:0;box-shadow:inset 1px 1px 0 #dfdfdf,inset -1px -1px 0 #808080;padding:2px 2px 10px}
-[data-theme="win95"] .panel-head{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;margin:0 0 10px;padding:3px 6px;min-height:20px;border-bottom:0}
+[data-theme="win95"] .panel{background:#c0c0c0;border:1px solid #000;border-radius:0;box-shadow:inset 1px 1px 0 #dfdfdf,inset -1px -1px 0 #808080;padding:2px 8px 10px}
+[data-theme="win95"] .panel-head{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;margin:0 -6px 10px;padding:3px 6px;min-height:20px;border-bottom:0}
 [data-theme="win95"] .panel-head h2{color:#fff;font-size:.92rem;font-weight:700;gap:6px}
 [data-theme="win95"] .panel-head .hours-week{color:#fff;opacity:.85}
 [data-theme="win95"] .icon-badge{width:20px;height:20px;border:1px solid #000;border-radius:0;box-shadow:none;background:#c0c0c0;font-size:.78rem}
@@ -663,13 +690,13 @@ textarea{resize:vertical;min-height:70px}
 /* ---------- Responsive ---------- */
 @media (max-width:1080px){
   .p-cal,.p-hours,.p-shortcuts{grid-column:span 6}
-  .p-todos,.p-news,.p-work,.p-personal{grid-column:span 12}
+  .p-todos,.p-news,.p-work,.p-personal,.p-notes{grid-column:span 12}
 }
 @media (max-width:760px){
   .topbar{grid-template-columns:1fr;gap:12px}
   .clockbox{text-align:left;min-width:0}
   .topactions{justify-content:flex-start}
-  .p-cal,.p-hours,.p-shortcuts,.p-work,.p-personal,.p-todos,.p-news{grid-column:span 12}
+  .p-cal,.p-hours,.p-shortcuts,.p-work,.p-personal,.p-todos,.p-news,.p-notes{grid-column:span 12}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
@@ -714,7 +741,7 @@ textarea{resize:vertical;min-height:70px}
   <div class="grid">
 
     <!-- Calendar -->
-    <section class="panel p-cal" aria-labelledby="calH">
+    <section class="panel p-cal" data-panel="cal" aria-labelledby="calH">
       <div class="panel-head">
         <h2 id="calH"><span class="icon-badge" aria-hidden="true">📅</span> Today’s Calendar</h2>
         <span class="spacer"></span>
@@ -734,7 +761,7 @@ textarea{resize:vertical;min-height:70px}
     </section>
 
     <!-- Work hours -->
-    <section class="panel p-hours" aria-labelledby="hoursH">
+    <section class="panel p-hours" data-panel="hours" aria-labelledby="hoursH">
       <div class="panel-head">
         <h2 id="hoursH"><span class="icon-badge" aria-hidden="true">⏱️</span> Work Hours</h2>
         <span class="spacer"></span>
@@ -754,7 +781,7 @@ textarea{resize:vertical;min-height:70px}
     </section>
 
     <!-- Shortcuts -->
-    <section class="panel p-shortcuts" aria-labelledby="scH">
+    <section class="panel p-shortcuts" data-panel="shortcuts" aria-labelledby="scH">
       <div class="panel-head">
         <h2 id="scH"><span class="icon-badge" aria-hidden="true">🚀</span> Launchpad</h2>
         <span class="spacer"></span>
@@ -765,7 +792,7 @@ textarea{resize:vertical;min-height:70px}
     </section>
 
     <!-- Work projects -->
-    <section class="panel p-work" aria-labelledby="workH">
+    <section class="panel p-work" data-panel="work" aria-labelledby="workH">
       <div class="panel-head">
         <h2 id="workH"><span class="icon-badge" aria-hidden="true">🏗️</span> Work Projects</h2>
         <span class="spacer"></span>
@@ -775,7 +802,7 @@ textarea{resize:vertical;min-height:70px}
     </section>
 
     <!-- Personal projects -->
-    <section class="panel p-personal" aria-labelledby="persH">
+    <section class="panel p-personal" data-panel="personal" aria-labelledby="persH">
       <div class="panel-head">
         <h2 id="persH"><span class="icon-badge" aria-hidden="true">🎨</span> Personal Projects</h2>
         <span class="spacer"></span>
@@ -785,7 +812,7 @@ textarea{resize:vertical;min-height:70px}
     </section>
 
     <!-- Todos -->
-    <section class="panel p-todos" aria-labelledby="todoH">
+    <section class="panel p-todos" data-panel="todos" aria-labelledby="todoH">
       <div class="panel-head">
         <h2 id="todoH"><span class="icon-badge" aria-hidden="true">✅</span> To-Dos</h2>
         <span class="spacer"></span>
@@ -804,7 +831,7 @@ textarea{resize:vertical;min-height:70px}
     </section>
 
     <!-- News -->
-    <section class="panel p-news" aria-labelledby="newsH">
+    <section class="panel p-news" data-panel="news" aria-labelledby="newsH">
       <div class="panel-head">
         <h2 id="newsH"><span class="icon-badge" aria-hidden="true">📡</span> Signal Feed</h2>
         <span class="spacer"></span>
@@ -813,6 +840,16 @@ textarea{resize:vertical;min-height:70px}
       </div>
       <div class="news-tabs" id="newsTabs" role="tablist" aria-label="News topics"></div>
       <ul class="news-list" id="newsList"></ul>
+    </section>
+
+    <!-- Notes -->
+    <section class="panel p-notes" data-panel="notes" aria-labelledby="notesH">
+      <div class="panel-head">
+        <h2 id="notesH"><span class="icon-badge" aria-hidden="true">📝</span> Notes</h2>
+        <span class="spacer"></span>
+        <button class="btn btn-sm" id="notesAdd" type="button">＋ New</button>
+      </div>
+      <div class="note-list" id="notesList"></div>
     </section>
 
   </div>
@@ -970,10 +1007,11 @@ function defaultState(){
     work: [],
     personal: [],
     todos: [],
+    notes: [],
     hours: { weekStart: null, entries: [], active: null, history: [] },
     shortcuts: DEFAULT_SHORTCUTS.map(s => ({ ...s })),
     news: { topics: DEFAULT_TOPICS.map(t => ({ ...t, feeds: [...t.feeds], items: [], lastFetch: null })), blocklist: [...POLITICS_BLOCKLIST], activeTopic: "ai" },
-    ui: { todoFilter: "open", openProjects: {} }
+    ui: { todoFilter: "open", openProjects: {}, openNotes: {}, panelOrder: ["cal","hours","shortcuts","work","personal","todos","news","notes"] }
   };
 }
 
@@ -1694,12 +1732,12 @@ function renderShortcuts(){
   const shown = state.shortcuts.filter(shortcutVisibleHere);
   const hidden = state.shortcuts.length - shown.length;
   grid.innerHTML = shown.map(s => `
-    <div class="shortcut" data-id="${s.id}">
+    <div class="shortcut" data-id="${s.id}" draggable="true">
       <button class="shortcut-link" type="button" data-open="${s.id}" aria-label="Open ${esc(s.name)}" style="background:none;border:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:inherit;font:inherit">
-        <span class="tile" style="--sc:${esc(s.color || "#ff6b35")}" aria-hidden="true">${esc(s.icon)}</span>
+        <span class="tile" style="--sc:${esc(s.color || "#ff6b35")}" aria-hidden="true">${s.iconImg ? `<img class="sc-icon-img" src="${esc(s.iconImg)}" alt="">` : esc(s.icon)}</span>
         <span class="sc-name">${esc(s.name)}</span>
       </button>
-      <button class="sc-edit" type="button" data-edit="${s.id}" aria-label="Edit ${esc(s.name)}">✎</button>
+      <button class="sc-edit" type="button" data-edit="${s.id}" aria-label="Edit ${esc(s.name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
     </div>
   `).join("") + `
     <button class="shortcut shortcut-add" type="button" id="scAddTile" aria-label="Add a shortcut">
@@ -1742,8 +1780,35 @@ async function openShortcut(id){
   try{ window.location.href = s.target; }catch(e){}
   toast("Your browser blocked the " + (s.kind === "file" ? "local file" : "app") + " link. Run Start Dashboard.bat for desktop launching.");
 }
+// Read an image file, downscale it to a small square-ish PNG and return a data
+// URL — keeps localStorage/sync payloads tiny for tile icons.
+function readIconImage(file, cb){
+  if(!file || !/^image\//.test(file.type || "")){ toast("Pick an image file (PNG works best)."); return; }
+  const reader = new FileReader();
+  reader.onerror = () => toast("Couldn’t read that image.");
+  reader.onload = () => {
+    const img = new Image();
+    img.onerror = () => toast("Couldn’t load that image.");
+    img.onload = () => {
+      const max = 72;
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      let out;
+      try{ out = canvas.toDataURL("image/png"); }catch(e){ out = reader.result; }
+      cb(out);
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
 function shortcutDialog(existing){
   const s = existing || { id: uid(), icon: "🚀", name: "", target: "", kind: "web", color: "#ff6b35", platform: "all" };
+  let iconImg = s.iconImg || "";
   openModal(existing ? "Edit shortcut" : "Add a shortcut", `
     <div class="field"><label for="scName">Name</label><input id="scName" type="text" value="${esc(s.name)}" placeholder="Blender…"></div>
     <div class="field"><label for="scTarget">Target</label><input id="scTarget" type="text" value="${esc(s.target)}" placeholder="https://… or blender:// or file:///C:/…"></div>
@@ -1766,6 +1831,15 @@ function shortcutDialog(existing){
       <p class="hint">Desktop-only tiles are hidden on phones/tablets and the hosted web app.</p>
     </div>
     <div class="field"><label>Icon</label>
+      <div class="sc-img-row">
+        <img id="scIconImgPreview" class="sc-img-preview" ${iconImg ? `src="${esc(iconImg)}"` : ""} alt=""${iconImg ? "" : " hidden"}>
+        <div class="sc-img-actions">
+          <button type="button" class="btn btn-sm" id="scIconImgPick">⬆ Import image…</button>
+          <button type="button" class="btn btn-sm btn-ghost" id="scIconImgClear"${iconImg ? "" : " hidden"}>Remove image</button>
+          <input type="file" id="scIconImgFile" accept="image/png,image/*" hidden>
+        </div>
+      </div>
+      <p class="hint">Import a small PNG (or other image) to use as the tile icon. It’s scaled down to 72px and stored with your dashboard.</p>
       <div style="display:flex;flex-wrap:wrap;gap:6px" id="iconPicker">
         ${ICON_CHOICES.map(i => `<button type="button" class="btn btn-sm icon-choice" data-icon="${i}" aria-pressed="${i===s.icon}" style="padding:6px 9px;font-size:1.1rem">${i}</button>`).join("")}
       </div>
@@ -1779,13 +1853,34 @@ function shortcutDialog(existing){
         const name = $("#scName").value.trim();
         const target = $("#scTarget").value.trim();
         if(!name || !target){ toast("Name and target are required."); return; }
-        const obj = { id: s.id, name, target, kind: $("#scKind").value, color: $("#scColor").value.trim() || "#ff6b35", icon: $("#scIcon").value.trim() || "🚀", platform: $("#scPlatform").value };
+        const obj = { id: s.id, name, target, kind: $("#scKind").value, color: $("#scColor").value.trim() || "#ff6b35", icon: $("#scIcon").value.trim() || "🚀", platform: $("#scPlatform").value, iconImg };
         const i = state.shortcuts.findIndex(x => x.id === s.id);
         if(i >= 0) state.shortcuts[i] = obj; else state.shortcuts.push(obj);
         closeModal(); save(); renderShortcuts(); toast(existing ? "Shortcut updated." : "Shortcut added.");
       }}
   ]);
+  const imgPreview = $("#scIconImgPreview");
+  const imgClear = $("#scIconImgClear");
+  const imgFile = $("#scIconImgFile");
+  const dropImage = () => {
+    iconImg = "";
+    if(imgPreview){ imgPreview.removeAttribute("src"); imgPreview.hidden = true; }
+    if(imgClear) imgClear.hidden = true;
+  };
+  $("#scIconImgPick").addEventListener("click", () => imgFile.click());
+  imgFile.addEventListener("change", () => {
+    const f = imgFile.files && imgFile.files[0];
+    imgFile.value = "";
+    if(!f) return;
+    readIconImage(f, dataUrl => {
+      iconImg = dataUrl;
+      imgPreview.src = dataUrl; imgPreview.hidden = false;
+      imgClear.hidden = false;
+    });
+  });
+  imgClear.addEventListener("click", dropImage);
   $$("#iconPicker .icon-choice").forEach(b => b.addEventListener("click", () => {
+    dropImage();
     $("#scIcon").value = b.dataset.icon;
     $$("#iconPicker .icon-choice").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
   }));
@@ -2043,6 +2138,75 @@ function projectDialog(bucket, existing){
       toast("⚠️ " + (e.message || e));
     }finally{ btn.disabled = false; }
   });
+}
+
+/* =========================================================================
+   NOTES
+   ========================================================================= */
+function noteDateLabel(ts){
+  if(!ts) return "";
+  try{ return "Updated " + new Date(ts).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
+  catch(e){ return ""; }
+}
+function renderNotes(){
+  const el = $("#notesList");
+  const list = state.notes || [];
+  if(!list.length){
+    el.innerHTML = `<p class="empty">No notes yet. Hit “＋ New”.</p>`;
+    return;
+  }
+  if(!state.ui.openNotes) state.ui.openNotes = {};
+  el.innerHTML = list.map(n => {
+    const isOpen = !!state.ui.openNotes[n.id];
+    const title = n.title || "Untitled note";
+    return `
+    <article class="note${isOpen ? " is-open" : ""}" data-id="${n.id}">
+      <div class="note-top">
+        <button class="n-toggle" type="button" data-nexpand="${n.id}" aria-expanded="${isOpen}" aria-label="Toggle note ${esc(title)}">
+          <span class="p-caret" aria-hidden="true">${isOpen ? "▾" : "▸"}</span>
+          <span class="n-title">${esc(title)}</span>
+        </button>
+        <button class="btn btn-sm" type="button" data-nedit="${n.id}" aria-label="Edit ${esc(title)}">✎</button>
+        <button class="btn btn-sm ptask-del" type="button" data-ndel="${n.id}" aria-label="Delete ${esc(title)}">✕</button>
+      </div>
+      ${isOpen ? `<div class="note-body">${esc(n.body || "")}</div>` : `<p class="note-date">${esc(noteDateLabel(n.updated))}</p>`}
+    </article>`;
+  }).join("");
+}
+function noteDialog(existing){
+  const n = existing || { id: uid(), title: "", body: "", updated: Date.now() };
+  openModal(existing ? "Edit note" : "New note", `
+    <div class="field"><label for="ntTitle">Title</label><input id="ntTitle" type="text" value="${esc(n.title)}" placeholder="Note title…"></div>
+    <div class="field"><label for="ntBody">Note</label><textarea id="ntBody" style="min-height:220px" placeholder="Write anything…">${esc(n.body)}</textarea></div>
+  `, [
+    ...(existing ? [{ label: "Delete", className: "btn-berry", onClick: () => {
+        closeModal();
+        confirmAction("Delete “" + (n.title || "this note") + "”?", () => {
+          state.notes = state.notes.filter(x => x.id !== n.id);
+          if(state.ui.openNotes) delete state.ui.openNotes[n.id];
+          save(); renderNotes();
+        });
+      } }] : []),
+    { label: "Cancel", className: "btn-ghost" },
+    { label: existing ? "Save" : "Create", className: "btn-tangerine", onClick: () => {
+        const title = $("#ntTitle").value.trim();
+        const body = $("#ntBody").value;
+        if(!title && !body.trim()){ toast("Write a title or some text first."); return; }
+        const obj = { id: n.id, title, body, updated: Date.now() };
+        const i = state.notes.findIndex(x => x.id === n.id);
+        if(i >= 0) state.notes[i] = obj; else state.notes.unshift(obj);
+        closeModal(); save(); renderNotes(); toast(existing ? "Note saved." : "Note created.");
+      }}
+  ]);
+}
+function serializeNotes(){
+  const lines = ["# Notes", ""];
+  (state.notes || []).forEach(n => {
+    lines.push("## " + (n.title || "Untitled note"));
+    if(n.updated) lines.push("_" + noteDateLabel(n.updated) + "_", "");
+    lines.push(n.body || "", "");
+  });
+  return lines.join("\n").trimEnd() + "\n";
 }
 
 /* =========================================================================
@@ -2351,8 +2515,8 @@ function openSetup(tab){
     if(id === "data"){
       $("#setExportJson").addEventListener("click", () => download("morning-brief-backup.json", JSON.stringify(state, null, 2), "application/json"));
       $("#setExportMd").addEventListener("click", () => {
-        const bundle = ["todos.md","projects.md","hours.md","shortcuts.md","news.md","calendar.md"].map(f => `# ${f}\n\n` + ({
-          "todos.md": serializeTodos, "projects.md": serializeProjects, "hours.md": serializeHours,
+        const bundle = ["todos.md","projects.md","hours.md","notes.md","shortcuts.md","news.md","calendar.md"].map(f => `# ${f}\n\n` + ({
+          "todos.md": serializeTodos, "projects.md": serializeProjects, "hours.md": serializeHours, "notes.md": serializeNotes,
           "shortcuts.md": serializeShortcuts, "news.md": serializeNews, "calendar.md": serializeCalendar
         }[f])()).join("\n\n---\n\n");
         download("morning-brief-markdown.md", bundle, "text/markdown");
@@ -2389,11 +2553,120 @@ function renderAll(){
   renderProjects("personal", "#personalList");
   renderTodos();
   renderNews();
+  renderNotes();
 }
 function tickClock(){
   const now = new Date();
   $("#clock").textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   $("#dateline").textContent = now.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+}
+
+/* =========================================================================
+   DRAG-TO-REORDER — pointer based, so it works with a mouse *and* touch.
+   Mouse: press and move past a small threshold. Touch/pen: press and hold
+   briefly, then drag. A tap (or long-press release without moving) still
+   behaves like a normal click.
+   ========================================================================= */
+function makeSortable(container, opts){
+  const itemSel = opts.itemSel;
+  const handleSel = opts.handleSel || null;
+  const onCommit = opts.onCommit || (() => {});
+  const HOLD_MS = 220, TOUCH_SLOP = 12, MOUSE_SLOP = 6;
+  let st = null;
+
+  const items = () => $$(itemSel, container).filter(el => !el.classList.contains("sorting"));
+
+  const beforeEl = (x, y) => {
+    const els = items().filter(el => el !== st.item);
+    if(!els.length) return null;
+    let best = null, bestD = Infinity;
+    for(const el of els){
+      const b = el.getBoundingClientRect();
+      if(!b.width && !b.height) continue;
+      const d = Math.hypot(x - (b.left + b.width / 2), y - (b.top + b.height / 2));
+      if(d < bestD){ bestD = d; best = el; }
+    }
+    if(!best) return null;
+    const b = best.getBoundingClientRect();
+    const after = y > b.top + b.height / 2 || x > b.left + b.width / 2;
+    return after ? best.nextSibling : best;
+  };
+
+  function begin(){
+    if(!st || st.started) return;
+    st.started = true;
+    clearTimeout(st.timer);
+    st.item.classList.add("sorting");
+    document.body.classList.add("is-sorting");
+  }
+  function cleanup(){
+    if(!st) return;
+    clearTimeout(st.timer);
+    if(st.item) st.item.classList.remove("sorting");
+    document.body.classList.remove("is-sorting");
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("pointercancel", onUp);
+    window.removeEventListener("touchmove", touchMove);
+    st = null;
+  }
+  function swallowClick(){
+    const until = Date.now() + 400;
+    const handler = ev => {
+      if(Date.now() < until){ ev.stopPropagation(); ev.preventDefault(); }
+      else document.removeEventListener("click", handler, true);
+    };
+    document.addEventListener("click", handler, true);
+    setTimeout(() => document.removeEventListener("click", handler, true), 450);
+  }
+  function touchMove(e){ if(st && st.started && e.cancelable) e.preventDefault(); }
+  function onMove(e){
+    if(!st || e.pointerId !== st.id) return;
+    const dx = e.clientX - st.startX, dy = e.clientY - st.startY;
+    if(!st.started){
+      if(st.isTouch){
+        if(Math.hypot(dx, dy) > TOUCH_SLOP) cleanup(); // user meant to scroll
+        return;
+      }
+      if(Math.hypot(dx, dy) < MOUSE_SLOP) return;
+      begin();
+    }
+    if(e.cancelable) e.preventDefault();
+    const before = beforeEl(e.clientX, e.clientY);
+    if(before && before !== st.item) container.insertBefore(st.item, before);
+  }
+  function onUp(e){
+    if(!st || (e.pointerId != null && e.pointerId !== st.id)) return;
+    const did = st.started;
+    cleanup();
+    if(did){ swallowClick(); onCommit(); }
+  }
+  container.addEventListener("pointerdown", e => {
+    if(e.button != null && e.button !== 0) return;
+    if(st) return;
+    const item = e.target.closest(itemSel);
+    if(!item || !container.contains(item)) return;
+    if(handleSel && !e.target.closest(handleSel)) return;
+    st = {
+      item, id: e.pointerId, isTouch: e.pointerType !== "mouse",
+      startX: e.clientX, startY: e.clientY, started: false, timer: null
+    };
+    if(st.isTouch) st.timer = setTimeout(begin, HOLD_MS);
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("touchmove", touchMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  });
+}
+
+function applyPanelOrder(){
+  const grid = $(".grid");
+  if(!grid) return;
+  const order = Array.isArray(state.ui.panelOrder) ? state.ui.panelOrder : [];
+  order.forEach(id => {
+    const p = grid.querySelector(`.panel[data-panel="${id}"]`);
+    if(p) grid.appendChild(p);
+  });
 }
 
 /* ---------- wire up events ---------- */
@@ -2410,6 +2683,7 @@ function wire(){
   $("#persAdd").addEventListener("click", () => projectDialog("personal", null));
   $("#newsRefresh").addEventListener("click", () => refreshNews());
   $("#newsSettings").addEventListener("click", newsTopicsDialog);
+  $("#notesAdd").addEventListener("click", () => noteDialog(null));
 
   $("#todoForm").addEventListener("submit", e => {
     e.preventDefault();
@@ -2419,6 +2693,26 @@ function wire(){
     $("#todoText").value = ""; $("#todoText").focus();
     save(); renderTodos();
   });
+
+  // Launchpad: drag tiles to reorder. Hidden (platform-filtered) shortcuts keep
+  // their place in the full list while the visible ones are rearranged.
+  const scGrid = $("#shortcutGrid");
+  const commitShortcutOrder = () => {
+    const queue = $$(".shortcut[data-id]", scGrid).map(el => el.dataset.id);
+    const visible = new Set(state.shortcuts.filter(shortcutVisibleHere).map(s => s.id));
+    const byId = new Map(state.shortcuts.map(s => [s.id, s]));
+    state.shortcuts = state.shortcuts.map(s => visible.has(s.id) ? byId.get(queue.shift()) : s).filter(Boolean);
+    save();
+  };
+  makeSortable(scGrid, { itemSel: ".shortcut[data-id]", onCommit: commitShortcutOrder });
+
+  // Panels: drag the header to rearrange the dashboard. Order is persisted.
+  const dashGrid = $(".grid");
+  const commitPanelOrder = () => {
+    state.ui.panelOrder = $$(".panel[data-panel]", dashGrid).map(p => p.dataset.panel);
+    save();
+  };
+  makeSortable(dashGrid, { itemSel: ".panel", handleSel: ".panel-head", onCommit: commitPanelOrder });
 
   // delegated clicks
   document.addEventListener("click", e => {
@@ -2451,9 +2745,27 @@ function wire(){
       if(t) toast("Deleted: " + t.text);
       return;
     }
+    const nedit = e.target.closest("[data-nedit]");
+    if(nedit){ noteDialog(state.notes.find(n => n.id === nedit.dataset.nedit)); return; }
+    const ndel = e.target.closest("[data-ndel]");
+    if(ndel){
+      const n = state.notes.find(x => x.id === ndel.dataset.ndel);
+      state.notes = state.notes.filter(x => x.id !== ndel.dataset.ndel);
+      if(state.ui.openNotes) delete state.ui.openNotes[ndel.dataset.ndel];
+      save(); renderNotes();
+      if(n) toast("Deleted: " + (n.title || "note"));
+      return;
+    }
+    const nexp = e.target.closest("[data-nexpand]");
+    if(nexp){
+      if(!state.ui.openNotes) state.ui.openNotes = {};
+      state.ui.openNotes[nexp.dataset.nexpand] = !state.ui.openNotes[nexp.dataset.nexpand];
+      save(); renderNotes();
+      return;
+    }
     const tab = e.target.closest("[data-topic]");
     if(tab){ state.news.activeTopic = tab.dataset.topic; save(); renderNews(); return; }
-    if(e.target.id === "scAddTile"){ shortcutDialog(null); return; }
+    if(e.target.closest("#scAddTile")){ shortcutDialog(null); return; }
   });
   document.addEventListener("change", e => {
     const tg = e.target.closest("[data-toggle]");
@@ -2522,12 +2834,17 @@ function boot(){
   ["work","personal"].forEach(b => (state[b] || []).forEach(p => { if(!Array.isArray(p.tasks)) p.tasks = []; }));
   if(!state.settings.ai) state.settings.ai = { key: "", model: "auto" };
   if(!state.ui.openProjects) state.ui.openProjects = {};
+  // Migration: notes + panel order.
+  if(!Array.isArray(state.notes)) state.notes = [];
+  if(!state.ui.openNotes) state.ui.openNotes = {};
+  if(!Array.isArray(state.ui.panelOrder) || !state.ui.panelOrder.length) state.ui.panelOrder = defaultState().ui.panelOrder;
   // Migration: theme setting + per-shortcut platform (app/file → desktop).
   if(!state.settings.theme) state.settings.theme = "default";
   state.shortcuts = (state.shortcuts || []).map(s => ({ platform: (s.kind === "web" ? "all" : "desktop"), ...s }));
   applyTheme(state.settings.theme);
 
   wire();
+  applyPanelOrder();
   renderAll();
   tickClock();
   setInterval(tickClock, 15000);
@@ -2570,6 +2887,7 @@ function boot(){
       setState: (s) => {
         state = deepMerge(defaultState(), s || {});
         try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
+        applyPanelOrder();
         renderAll();
       }
     });
