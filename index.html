@@ -281,6 +281,7 @@ table.ts tr.ts-clientrow .ts-client-total{float:right;font-variant-numeric:tabul
 /* ---------- Drag to reorder (shortcuts + panels) ---------- */
 .shortcut[data-id]{cursor:grab;touch-action:manipulation}
 .shortcut[data-id]:active{cursor:grabbing}
+.shortcut img,.sc-icon-img{-webkit-user-drag:none;user-drag:none}
 .panel-head{cursor:grab;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .panel-head:active{cursor:grabbing}
 .is-sorting{cursor:grabbing}
@@ -989,6 +990,7 @@ function applyTheme(t){
 }
 let serverOnline = false;
 async function pingServer(){
+  const before = serverOnline;
   try{
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 1500);
@@ -996,6 +998,10 @@ async function pingServer(){
     clearTimeout(t);
     serverOnline = !!r.ok;
   }catch(e){ serverOnline = false; }
+  // Shortcut visibility depends on canLaunchLocal() (isDesktop || serverOnline),
+  // so refresh the Launchpad note/tiles when the server appears or disappears
+  // (e.g. browser driven by Start Dashboard.bat).
+  if(serverOnline !== before && typeof state !== "undefined" && state && $("#shortcutGrid")) renderShortcuts();
   return serverOnline;
 }
 
@@ -1733,9 +1739,9 @@ function renderShortcuts(){
   const shown = state.shortcuts.filter(shortcutVisibleHere);
   const hidden = state.shortcuts.length - shown.length;
   grid.innerHTML = shown.map(s => `
-    <div class="shortcut" data-id="${s.id}" draggable="true">
+    <div class="shortcut" data-id="${s.id}">
       <button class="shortcut-link" type="button" data-open="${s.id}" aria-label="Open ${esc(s.name)}" style="background:none;border:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:inherit;font:inherit">
-        <span class="tile" style="--sc:${esc(s.color || "#ff6b35")}" aria-hidden="true">${s.iconImg ? `<img class="sc-icon-img" src="${esc(s.iconImg)}" alt="">` : esc(s.icon)}</span>
+        <span class="tile" style="--sc:${esc(s.color || "#ff6b35")}" aria-hidden="true">${s.iconImg ? `<img class="sc-icon-img" src="${esc(s.iconImg)}" alt="" draggable="false">` : esc(s.icon)}</span>
         <span class="sc-name">${esc(s.name)}</span>
       </button>
       <button class="sc-edit" type="button" data-edit="${s.id}" aria-label="Edit ${esc(s.name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
@@ -1746,7 +1752,11 @@ function renderShortcuts(){
       <span class="sc-name">Add</span>
     </button>`;
   const note = $("#scNote");
-  if(note) note.textContent = hidden ? hidden + " desktop-only shortcut" + (hidden > 1 ? "s" : "") + " hidden on this device." : "";
+  if(note){
+    if(!hidden) note.textContent = "";
+    else if(canLaunchLocal()) note.textContent = hidden + " web/mobile-only shortcut" + (hidden > 1 ? "s" : "") + " hidden on this device.";
+    else note.textContent = hidden + " desktop-only shortcut" + (hidden > 1 ? "s" : "") + " hidden on this device.";
+  }
 }
 async function openShortcut(id){
   const s = state.shortcuts.find(x => x.id === id);
@@ -2684,6 +2694,8 @@ function makeSortable(container, opts){
   container.addEventListener("pointerdown", e => {
     if(e.button != null && e.button !== 0) return;
     if(st) return;
+    // Let the pencil handle its own clicks — don't start a drag from it.
+    if(e.target.closest("[data-edit]")) return;
     const item = e.target.closest(itemSel);
     if(!item || !container.contains(item)) return;
     if(handleSel && !e.target.closest(handleSel)) return;
@@ -2698,6 +2710,10 @@ function makeSortable(container, opts){
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
   });
+  // Kill native HTML5 drag (desktop Chrome/Electron starts it on mousemove and
+  // it swallows the pointer events our custom reorder needs — plus <img> tiles
+  // are natively draggable even when the parent isn't).
+  container.addEventListener("dragstart", e => e.preventDefault());
 }
 
 function applyPanelOrder(){
