@@ -10,7 +10,8 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win nsis portable",
-    "serve": "node serve.js"
+    "serve": "node serve.js",
+    "test": "node --test tests/dashboard.test.js"
   },
   "devDependencies": {
     "electron": "^33.0.0",

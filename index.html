@@ -244,6 +244,14 @@ table.ts td.ts-total,table.ts tr.ts-grand td{font-weight:800}
 table.ts tr.ts-grand td{background:var(--paper-2)}
 table.ts tr.ts-clientrow td{background:var(--paper-2);text-align:left;font-weight:800;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
 table.ts tr.ts-clientrow .ts-client-total{float:right;font-variant-numeric:tabular-nums}
+table.ts td.ts-cell{padding:0}
+.ts-editcell{display:block;width:100%;padding:3px 4px;background:none;border:none;font:inherit;color:inherit;text-align:right;cursor:pointer}
+.ts-editcell:hover,.ts-editcell:focus-visible{background:var(--marigold);text-decoration:underline;outline:none}
+.ts-editcell.ts-addcell{color:#c9b79e}
+.ts-editcell.ts-addcell:hover,.ts-editcell.ts-addcell:focus-visible{color:var(--ink)}
+.hours-entries{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.hours-entries li{display:flex;align-items:center;gap:8px;border:2px solid var(--ink);border-radius:var(--radius-sm);padding:7px 9px;background:var(--paper);font-size:.85rem}
+.hours-entries .he-main{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
 
 /* ---------- Shortcuts ---------- */
 .shortcut-grid{
@@ -841,6 +849,7 @@ textarea{resize:vertical;min-height:70px}
         <button class="btn btn-sm" id="newsSettings" type="button">Topics</button>
       </div>
       <div class="news-tabs" id="newsTabs" role="tablist" aria-label="News topics"></div>
+      <p class="hint" id="newsMeta" style="margin:-4px 0 8px" aria-live="polite"></p>
       <ul class="news-list" id="newsList"></ul>
     </section>
 
@@ -1456,6 +1465,53 @@ function proxyFetch(target, opts){
   }
   return fetch(target, o);
 }
+// Some proxies (e.g. allorigins /get) wrap the payload in JSON {contents:"…"}.
+function unwrapProxyPayload(text){
+  const s = String(text == null ? "" : text);
+  const t = s.trimStart();
+  if(t.startsWith("{") || t.startsWith("[")){
+    try{ const j = JSON.parse(s); if(j && typeof j.contents === "string") return j.contents; }catch(e){}
+  }
+  return s;
+}
+// Every route worth trying for a feed, best first: the configured proxy, then
+// the full proxy list (local server / cloud relay / public fallbacks), then a
+// direct fetch. News used to try only the first of these, so one dead proxy
+// took the whole feed down with it.
+function newsProxyCandidates(){
+  const list = [];
+  const push = p => { if(p != null && !list.includes(p)) list.push(p); };
+  push(activeProxyPrefix());
+  getProxies().forEach(push);
+  push("");
+  return list;
+}
+const NEWS_FETCH_TIMEOUT_MS = 12000;
+function timedProxyFetch(target){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), NEWS_FETCH_TIMEOUT_MS);
+  return proxyFetch(target, { cache: "no-store", redirect: "follow", signal: ctrl.signal })
+    .finally(() => clearTimeout(t));
+}
+// Try each proxy in order until one returns a feed that parses to stories.
+// An HTTP-200 error page or an empty parse counts as failure, never success.
+async function fetchFeed(url, prefixes, fetcher, parser){
+  const parse = parser || parseFeed;
+  let lastErr = "";
+  for(const p of (prefixes || [])){
+    const target = p ? p + encodeURIComponent(url) : url;
+    try{
+      const res = await fetcher(target);
+      if(!res.ok){ lastErr = "HTTP " + res.status; continue; }
+      const items = parse(unwrapProxyPayload(await res.text()));
+      if(!items.length){ lastErr = "empty feed"; continue; }
+      return { ok: true, items, via: p };
+    }catch(e){
+      lastErr = e && e.message ? e.message : String(e);
+    }
+  }
+  return { ok: false, items: [], error: lastErr || "no proxy reachable" };
+}
 // Try the URL directly, then each proxy in order, until one returns ICS data.
 async function fetchIcs(url, proxies){
   const attempts = ["", ...proxies];   // "" = direct fetch (works if served over http and the feed allows CORS)
@@ -1465,11 +1521,7 @@ async function fetchIcs(url, proxies){
     try{
       const res = await proxyFetch(target, { cache: "no-store", redirect: "follow" });
       if(!res.ok){ lastErr = (p ? "proxy " : "") + "HTTP " + res.status; continue; }
-      let text = await res.text();
-      // Some proxies (e.g. allorigins /get) wrap the payload in JSON.
-      if(/^\s*[\[{]/.test(text)){
-        try{ const j = JSON.parse(text); if(typeof j.contents === "string") text = j.contents; }catch(e){}
-      }
+      const text = unwrapProxyPayload(await res.text());
       if(!/BEGIN:VCALENDAR/i.test(text)){ lastErr = (p ? "proxy returned non-calendar data" : "feed returned non-calendar data"); continue; }
       return { ok: true, text };
     }catch(e){
@@ -1583,6 +1635,132 @@ function logEntry({ date, client, project, minutes, note }){
     state.hours.entries.push({ id: uid(), date, client: c, project: p, minutes, note: note || "" });
   }
 }
+// Entries whose date falls inside [ws, we] (inclusive date keys).
+function entriesInWeek(entries, ws, we){
+  return (entries || []).filter(e => e && e.date && e.date >= ws && e.date <= we);
+}
+function uniqueSorted(values){
+  const seen = new Map();
+  values.forEach(v => {
+    const s = String(v == null ? "" : v).trim();
+    if(s && !seen.has(s.toLowerCase())) seen.set(s.toLowerCase(), s);
+  });
+  return [...seen.values()].sort((a, b) => a.localeCompare(b));
+}
+// Dropdown suggestions for this week only (callers pass current-week entries,
+// so the lists reset when the week rolls over and old entries move to History).
+function weekClients(entries){
+  return uniqueSorted((entries || []).map(e => e.client));
+}
+function weekProjects(entries, client){
+  const c = String(client == null ? "" : client).trim().toLowerCase();
+  const pool = c ? (entries || []).filter(e => String(e.client || "").trim().toLowerCase() === c) : [];
+  return uniqueSorted((pool.length ? pool : entries || []).map(e => e.project));
+}
+function currentWeekEntries(){
+  const ws = state.hours.weekStart || weekStartKey();
+  return entriesInWeek(state.hours.entries, ws, addDays(ws, 6));
+}
+function datalistHTML(id, values){
+  return '<datalist id="' + id + '">' + values.map(v => '<option value="' + esc(v) + '"></option>').join("") + "</datalist>";
+}
+// Keep a project datalist in step with the client typed/selected beside it.
+function wireSuggest(clientEl, listEl){
+  if(!clientEl || !listEl) return;
+  const sync = () => {
+    listEl.innerHTML = weekProjects(currentWeekEntries(), clientEl.value)
+      .map(v => '<option value="' + esc(v) + '"></option>').join("");
+  };
+  clientEl.addEventListener("input", sync);
+  clientEl.addEventListener("change", sync);
+  sync();
+}
+// Apply an edit to one saved entry without mutating the input list. If the
+// edited entry would land on another entry's date+client+project, the two
+// merge (minutes add, notes join) — the same rule logEntry uses for new time.
+function applyEntryEdit(entries, id, next){
+  const list = entries || [];
+  const idx = list.findIndex(e => e.id === id);
+  if(idx < 0) return { entries: list, status: "missing" };
+  const c = String(next.client == null ? "" : next.client).trim();
+  const p = String(next.project == null ? "" : next.project).trim();
+  const note = String(next.note == null ? "" : next.note).trim();
+  const dupeIdx = list.findIndex(e =>
+    e.id !== id && e.date === next.date &&
+    String(e.client || "").toLowerCase() === c.toLowerCase() &&
+    String(e.project || "").toLowerCase() === p.toLowerCase());
+  const out = list.map(e => ({ ...e }));
+  if(dupeIdx >= 0){
+    const dupe = out[dupeIdx];
+    const notes = [];
+    [dupe.note, note].forEach(n => { const s = String(n || "").trim(); if(s && !notes.includes(s)) notes.push(s); });
+    dupe.minutes = (dupe.minutes || 0) + next.minutes;
+    dupe.note = notes.join("; ");
+    out.splice(out.findIndex(e => e.id === id), 1);
+    return { entries: out, status: "merged" };
+  }
+  out[idx] = { ...out[idx], date: next.date, client: c, project: p, minutes: next.minutes, note };
+  return { entries: out, status: "updated" };
+}
+function editHoursEntry(id){
+  const e = state.hours.entries.find(x => x.id === id);
+  if(!e){ toast("That entry is no longer here."); renderHours(); return; }
+  const ws = state.hours.weekStart || weekStartKey();
+  const we = addDays(ws, 6);
+  const week = currentWeekEntries();
+  const hours = Math.round(((e.minutes || 0) / 60) * 100) / 100;
+  openModal("Edit time entry", `
+    <div class="row">
+      <div class="field"><label for="eeDate">Date</label><input id="eeDate" type="date" min="${ws}" max="${we}" value="${esc(e.date)}"></div>
+      <div class="field"><label for="eeHours">Hours</label><input id="eeHours" type="number" min="0" step="0.25" value="${hours}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="eeClient">Client</label><input id="eeClient" type="text" list="eeClients" autocomplete="off" placeholder="Acme Co…" value="${esc(e.client || "")}">${datalistHTML("eeClients", weekClients(week))}</div>
+      <div class="field"><label for="eeProject">Project</label><input id="eeProject" type="text" list="eeProjects" autocomplete="off" placeholder="Cascade animatic…" value="${esc(e.project || "")}">${datalistHTML("eeProjects", weekProjects(week, e.client || ""))}</div>
+    </div>
+    <div class="field"><label for="eeNote">Notes <span class="hint" style="display:inline">(optional)</span></label><input id="eeNote" type="text" value="${esc(e.note || "")}"></div>
+  `, [
+    { label: "Delete", className: "btn-berry", onClick: () => {
+        closeModal();
+        const label = [e.client, e.project].filter(Boolean).join(" · ") || "this entry";
+        confirmAction(`Delete ${fmtHours(e.minutes || 0)}h for “${label}” on ${e.date}?`, () => {
+          state.hours.entries = state.hours.entries.filter(x => x.id !== e.id);
+          save(); renderHours(); toast("Entry deleted.");
+        });
+      }},
+    { label: "Cancel", className: "btn-ghost" },
+    { label: "Save changes", className: "btn-tangerine", onClick: () => {
+        const hrs = parseFloat($("#eeHours").value) || 0;
+        if(hrs <= 0){ toast("Enter an hour amount, or use Delete to remove the entry."); return; }
+        const r = applyEntryEdit(state.hours.entries, e.id, {
+          date: clampToWeek($("#eeDate").value || e.date),
+          client: $("#eeClient").value,
+          project: $("#eeProject").value,
+          minutes: Math.round(hrs * 60),
+          note: $("#eeNote").value
+        });
+        if(r.status === "missing"){ toast("That entry is no longer here."); closeModal(); renderHours(); return; }
+        state.hours.entries = r.entries;
+        closeModal(); save(); renderHours();
+        toast(r.status === "merged" ? "Entry merged into the matching row." : "Entry updated.");
+      }}
+  ]);
+  wireSuggest($("#eeClient"), $("#eeProjects"));
+}
+// A timesheet cell normally holds one entry; if several share it (e.g. casing
+// differences from older data), let the user pick which one to edit.
+function editHoursCell(ids){
+  const found = (ids || []).map(id => state.hours.entries.find(x => x.id === id)).filter(Boolean);
+  if(!found.length){ toast("That entry is no longer here."); renderHours(); return; }
+  if(found.length === 1){ editHoursEntry(found[0].id); return; }
+  openModal("Edit time entry", `
+    <p class="hint" style="margin-bottom:10px">More than one entry sits in this cell. Pick one to edit:</p>
+    <ul class="hours-entries">${found.map(e => `
+      <li><span class="he-main"><strong>${esc(fmtHours(e.minutes || 0))}h</strong> · ${esc(e.date)}${e.note ? " · " + esc(e.note) : ""}</span>
+      <button class="btn btn-sm btn-tangerine" type="button" data-hedit-one="${e.id}">Edit</button></li>`).join("")}
+    </ul>
+  `, [{ label: "Cancel", className: "btn-ghost" }]);
+}
 
 function renderHours(){
   const start = state.hours.weekStart || weekStartKey();
@@ -1615,16 +1793,18 @@ function renderHours(){
 function renderTimesheet(days){
   const wrap = $("#timesheetWrap");
   const rows = new Map();
-  const add = (client, project, date, minutes) => {
+  const add = (client, project, date, minutes, entryId) => {
     const key = (client || "") + "\u0000" + (project || "");
     let row = rows.get(key);
-    if(!row){ row = { client: client || "", project: project || "", cells: {} }; rows.set(key, row); }
+    if(!row){ row = { client: client || "", project: project || "", cells: {}, cellIds: {}, cellLive: {} }; rows.set(key, row); }
     row.cells[date] = (row.cells[date] || 0) + minutes;
+    if(entryId){ (row.cellIds[date] = row.cellIds[date] || []).push(entryId); }
+    else if(minutes){ row.cellLive[date] = true; }
   };
-  state.hours.entries.forEach(e => add(e.client, e.project, e.date, e.minutes || 0));
+  state.hours.entries.forEach(e => add(e.client, e.project, e.date, e.minutes || 0, e.id));
   if(state.hours.active){
     const a = state.hours.active;
-    add(a.client, a.project, clampToWeek(todayKey(new Date(a.startedAt))), liveMinutes());
+    add(a.client, a.project, clampToWeek(todayKey(new Date(a.startedAt))), liveMinutes(), null);
   }
   const list = [...rows.values()].sort((a, b) => (a.client + "\u0000" + a.project).localeCompare(b.client + "\u0000" + b.project));
   if(!list.length){
@@ -1649,12 +1829,20 @@ function renderTimesheet(days){
     }
     const cells = days.map(d => {
       const m = r.cells[d.key] || 0;
-      return `<td class="${m ? "" : "ts-empty"}">${m ? fmtHours(m) : "·"}</td>`;
+      const ids = r.cellIds[d.key] || [];
+      const label = (r.client ? r.client + " · " : "") + (r.project || "—") + ", " + d.key;
+      if(ids.length){
+        return `<td class="ts-cell"><button type="button" class="ts-editcell" data-hedit="${esc(ids.join(","))}" title="Edit entry — ${esc(label)}" aria-label="Edit ${esc(fmtHours(m))} hours, ${esc(label)}">${fmtHours(m)}</button></td>`;
+      }
+      if(r.cellLive[d.key]){
+        return `<td title="Timer running — stop it to log this time">${m ? fmtHours(m) : "·"}</td>`;
+      }
+      return `<td class="ts-cell ts-empty"><button type="button" class="ts-editcell ts-addcell" data-hadd="${d.key}" data-hclient="${esc(r.client)}" data-hproject="${esc(r.project)}" title="Add time — ${esc(label)}" aria-label="Add time, ${esc(label)}">·</button></td>`;
     }).join("");
     body.push(`<tr><td class="ts-proj" title="${esc((r.client ? r.client + " · " : "") + r.project)}">${esc(r.project || "—")}</td>${cells}<td class="ts-total">${fmtHours(r.total)}</td></tr>`);
   });
   const foot = `<tr class="ts-grand"><td>Total</td>${days.map(d => `<td>${dayTotals[d.key] ? fmtHours(dayTotals[d.key]) : "·"}</td>`).join("")}<td>${fmtHours(grand)}</td></tr>`;
-  wrap.innerHTML = `<table class="ts"><thead>${head}</thead><tbody>${body.join("")}${foot}</tbody></table>`;
+  wrap.innerHTML = `<table class="ts"><thead>${head}</thead><tbody>${body.join("")}${foot}</tbody></table><p class="hint" style="margin-top:6px">Tip: click any day cell to edit that entry — or an empty cell to add time there.</p>`;
 }
 function tickTimer(){
   const el = $("#liveTimer");
@@ -1673,11 +1861,12 @@ function stopTimer(){
   const started = new Date(state.hours.active.startedAt);
   const minutes = Math.max(1, Math.round((Date.now() - started) / 60000));
   const elapsed = Math.round((minutes / 60) * 100) / 100;
+  const week = currentWeekEntries();
   openModal("Log timer", `
     <p class="hint" style="margin-bottom:10px">Timer ran ${minutesLabel(minutes)}. Add a client and project, adjust the hours if you like.</p>
     <div class="row">
-      <div class="field"><label for="tmClient">Client</label><input id="tmClient" type="text" placeholder="Acme Co…" value="${esc(state.hours.active.client || "")}"></div>
-      <div class="field"><label for="tmProject">Project</label><input id="tmProject" type="text" placeholder="Cascade animatic…" value="${esc(state.hours.active.project || "")}"></div>
+      <div class="field"><label for="tmClient">Client</label><input id="tmClient" type="text" list="tmClients" autocomplete="off" placeholder="Acme Co…" value="${esc(state.hours.active.client || "")}">${datalistHTML("tmClients", weekClients(week))}</div>
+      <div class="field"><label for="tmProject">Project</label><input id="tmProject" type="text" list="tmProjects" autocomplete="off" placeholder="Cascade animatic…" value="${esc(state.hours.active.project || "")}">${datalistHTML("tmProjects", weekProjects(week, state.hours.active.client || ""))}</div>
     </div>
     <div class="row">
       <div class="field"><label for="tmHours">Hours</label><input id="tmHours" type="number" min="0" step="0.25" value="${elapsed}"></div>
@@ -1695,20 +1884,24 @@ function stopTimer(){
         closeModal(); save(); renderHours(); toast(`⏹ Logged ${fmtHours(Math.round(hours * 60))}h.`);
       }}
   ]);
+  wireSuggest($("#tmClient"), $("#tmProjects"));
 }
-function logTimeManual(){
+function logTimeManual(prefill){
   const ws = state.hours.weekStart || weekStartKey();
   const we = addDays(ws, 6);
+  const pre = prefill || {};
+  const week = currentWeekEntries();
   openModal("Log time", `
     <div class="row">
-      <div class="field"><label for="ltDate">Date</label><input id="ltDate" type="date" min="${ws}" max="${we}" value="${clampToWeek(todayKey())}"></div>
+      <div class="field"><label for="ltDate">Date</label><input id="ltDate" type="date" min="${ws}" max="${we}" value="${clampToWeek(pre.date || todayKey())}"></div>
       <div class="field"><label for="ltHours">Hours</label><input id="ltHours" type="number" min="0" step="0.25" value="1"></div>
     </div>
     <div class="row">
-      <div class="field"><label for="ltClient">Client</label><input id="ltClient" type="text" placeholder="Acme Co…"></div>
-      <div class="field"><label for="ltProject">Project</label><input id="ltProject" type="text" placeholder="Cascade animatic…"></div>
+      <div class="field"><label for="ltClient">Client</label><input id="ltClient" type="text" list="ltClients" autocomplete="off" placeholder="Acme Co…" value="${esc(pre.client || "")}">${datalistHTML("ltClients", weekClients(week))}</div>
+      <div class="field"><label for="ltProject">Project</label><input id="ltProject" type="text" list="ltProjects" autocomplete="off" placeholder="Cascade animatic…" value="${esc(pre.project || "")}">${datalistHTML("ltProjects", weekProjects(week, pre.client || ""))}</div>
     </div>
     <div class="field"><label for="ltNote">Notes <span class="hint" style="display:inline">(optional)</span></label><input id="ltNote" type="text"></div>
+    <p class="hint">Clients and projects you use this week appear in these dropdowns for the rest of the week. You can always type a new one.</p>
   `, [
     { label: "Cancel", className: "btn-ghost" },
     { label: "Log it", className: "btn-tangerine", onClick: () => {
@@ -1719,6 +1912,7 @@ function logTimeManual(){
         closeModal(); save(); renderHours(); toast(`Logged ${fmtHours(Math.round(hours * 60))}h.`);
       }}
   ]);
+  wireSuggest($("#ltClient"), $("#ltProjects"));
 }
 
 /* =========================================================================
@@ -2302,13 +2496,22 @@ function isBlocked(item){
 function renderNews(){
   const tabs = $("#newsTabs");
   const topics = state.news.topics;
-  if(!topics.length){ tabs.innerHTML = ""; $("#newsList").innerHTML = `<li class="empty">No topics yet. Click “Topics”.</li>`; return; }
+  const meta = $("#newsMeta");
+  if(!topics.length){ tabs.innerHTML = ""; if(meta) meta.textContent = ""; $("#newsList").innerHTML = `<li class="empty">No topics yet. Click “Topics”.</li>`; return; }
   const active = topics.find(t => t.id === state.news.activeTopic) || topics[0];
   state.news.activeTopic = active.id;
   tabs.innerHTML = topics.map(t => {
     const n = (t.items || []).filter(i => !isBlocked(i)).length;
     return `<button class="tab" role="tab" type="button" data-topic="${t.id}" aria-selected="${t.id === active.id}">${esc(t.name)}${n ? " " + n : ""}</button>`;
   }).join("");
+  if(meta){
+    if(active.lastFetch){
+      const ageMs = Date.now() - new Date(active.lastFetch).getTime();
+      meta.textContent = "Updated " + relTime(active.lastFetch) + (ageMs > 86400000 ? " — may be stale, hit ↻ Refresh." : ".");
+    } else {
+      meta.textContent = (active.items || []).length ? "Showing saved stories." : "";
+    }
+  }
   const items = (active.items || []).filter(i => !isBlocked(i)).slice(0, 40);
   if(!items.length){
     $("#newsList").innerHTML = `<li class="empty">No stories cached for ${esc(active.name)}. Click “↻ Refresh”${state.settings.proxy ? "" : " — or set a CORS proxy in Setup"}.</li>`;
@@ -2335,36 +2538,60 @@ function relTime(d){
   if(days < 7) return days + "d ago";
   return new Date(t).toLocaleDateString([], { month: "short", day: "numeric" });
 }
+let newsRefreshing = false;
 async function refreshNews(onlyTopic){
-  const topics = onlyTopic ? [state.news.topics.find(t => t.id === onlyTopic)] : state.news.topics;
-  if(!state.settings.proxy){
-    toast("⚠️ No CORS proxy set — feeds will likely be blocked. Add one in Setup → News.");
-  }
-  toast("Fetching feeds…");
-  let total = 0, errors = 0;
-  for(const topic of topics){
-    if(!topic) continue;
-    const collected = [];
-    for(const feed of topic.feeds){
-      try{
-        const prefix = activeProxyPrefix();
-        const target = prefix ? prefix + encodeURIComponent(feed) : feed;
-        const res = await proxyFetch(target, { cache: "no-store" });
-        if(!res.ok) throw new Error("HTTP " + res.status);
-        const xml = await res.text();
-        parseFeed(xml).slice(0, 12).forEach(i => collected.push({ ...i, feedName: hostOf(feed) }));
-      }catch(e){ errors++; }
+  if(newsRefreshing){ toast("Already fetching feeds…"); return; }
+  newsRefreshing = true;
+  const btn = $("#newsRefresh");
+  const btnLabel = btn ? btn.textContent : "";
+  if(btn){ btn.disabled = true; btn.textContent = "Fetching…"; }
+  try{
+    const topics = onlyTopic ? [state.news.topics.find(t => t.id === onlyTopic)] : state.news.topics;
+    // Refresh server reachability first so the local/cloud relay is ranked right.
+    await pingServer().catch(() => {});
+    const prefixes = newsProxyCandidates();
+    toast("Fetching feeds…");
+    let total = 0, errors = 0, updatedTopics = 0, staleTopics = 0;
+    for(const topic of topics){
+      if(!topic) continue;
+      const results = await Promise.all((topic.feeds || []).map(async feed => {
+        const r = await fetchFeed(feed, prefixes, timedProxyFetch);
+        return { feed, r };
+      }));
+      const collected = [];
+      results.forEach(({ feed, r }) => {
+        if(r.ok) r.items.slice(0, 12).forEach(i => collected.push({ ...i, feedName: hostOf(feed) }));
+        else errors++;
+      });
+      // Only replace the cache with stories actually fetched. On total failure
+      // keep lastFetch and the saved stories, so a proxy outage shows yesterday's
+      // headlines instead of an empty panel for days.
+      if(collected.length){
+        collected.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const seen = new Set();
+        const freshItems = collected.filter(i => !seen.has(i.link) && seen.add(i.link)).slice(0, 60);
+        topic.items = freshItems;
+        topic.lastFetch = new Date().toISOString();
+        updatedTopics++;
+      } else if((topic.items || []).length){
+        staleTopics++;
+      }
+      total += (topic.items || []).length;
     }
-    collected.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    // de-dupe by link
-    const seen = new Set();
-    topic.items = collected.filter(i => { if(seen.has(i.link)) return false; seen.add(i.link); return true; }).slice(0, 60);
-    topic.lastFetch = new Date().toISOString();
-    total += topic.items.length;
+    save(); renderNews();
+    if(updatedTopics && !staleTopics){
+      toast(`📡 Loaded ${total} stories${errors ? ` (${errors} feed${errors>1?"s":""} unreachable)` : ""}.`);
+    } else if(updatedTopics){
+      toast(`📡 Loaded ${total} stories. ${staleTopics} topic${staleTopics>1?"s":""} unreachable — kept previous stories.`);
+    } else if(total){
+      toast("⚠️ Couldn't refresh (all proxies unreachable) — showing saved stories.");
+    } else {
+      toast("⚠️ No stories loaded — check your connection, CORS proxy and feed URLs.");
+    }
+  } finally {
+    newsRefreshing = false;
+    if(btn){ btn.disabled = false; btn.textContent = btnLabel; }
   }
-  save(); renderNews();
-  toast(total ? `📡 Loaded ${total} stories${errors ? ` (${errors} feed${errors>1?"s":""} unreachable)` : ""}.`
-             : "⚠️ No stories loaded — check your CORS proxy and feed URLs.");
 }
 function newsTopicsDialog(){
   openModal("News topics", `
@@ -2380,7 +2607,7 @@ function newsTopicsDialog(){
     <div class="field">
       <label for="proxyText">CORS proxy prefix</label>
       <input id="proxyText" type="text" value="${esc(state.settings.proxy)}" placeholder="https://api.allorigins.win/raw?url=">
-      <p class="hint">RSS feeds can’t be fetched directly from a local page. The default is the <strong>local server</strong> (start it with <code>Start Dashboard.bat</code>), which proxies on your machine. Leave blank to fetch directly (works only if the feed allows CORS).</p>
+      <p class="hint">RSS feeds can’t be fetched directly from a local page. The default is the <strong>local server</strong> (start it with <code>Start Dashboard.bat</code>), which proxies on your machine. If a proxy fails, the dashboard automatically tries the other proxies (and a direct fetch) and keeps showing the last saved stories. Leave blank to fetch directly (works only if the feed allows CORS).</p>
     </div>
   `, [
     { label: "Cancel", className: "btn-ghost" },
@@ -2734,7 +2961,7 @@ function wire(){
   $("#calImport").addEventListener("click", () => $("#icsFile").click());
   $("#icsFile").addEventListener("change", e => { if(e.target.files[0]) importICSFile(e.target.files[0]); e.target.value = ""; });
   $("#clockToggle").addEventListener("click", toggleClock);
-  $("#hoursLog").addEventListener("click", logTimeManual);
+  $("#hoursLog").addEventListener("click", () => logTimeManual());
   $("#scAdd").addEventListener("click", () => shortcutDialog(null));
   $("#workAdd").addEventListener("click", () => projectDialog("work", null));
   $("#persAdd").addEventListener("click", () => projectDialog("personal", null));
@@ -2820,6 +3047,12 @@ function wire(){
       save(); renderNotes();
       return;
     }
+    const hedit = e.target.closest("[data-hedit]");
+    if(hedit){ editHoursCell(hedit.dataset.hedit.split(",").filter(Boolean)); return; }
+    const heditOne = e.target.closest("[data-hedit-one]");
+    if(heditOne){ editHoursEntry(heditOne.dataset.heditOne); return; }
+    const hadd = e.target.closest("[data-hadd]");
+    if(hadd){ logTimeManual({ date: hadd.dataset.hadd, client: hadd.dataset.hclient || "", project: hadd.dataset.hproject || "" }); return; }
     const tab = e.target.closest("[data-topic]");
     if(tab){ state.news.activeTopic = tab.dataset.topic; save(); renderNews(); return; }
     if(e.target.closest("#scAddTile")){ shortcutDialog(null); return; }
