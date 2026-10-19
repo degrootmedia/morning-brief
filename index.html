@@ -143,7 +143,7 @@ a{color:var(--teal-dark)}
 
 /* ---------- Status / toast ---------- */
 .status{
-  max-width:1360px;margin:0 auto 6px;padding:0 clamp(12px,3vw,28px);
+  max-width:1360px;margin:14px auto 6px;padding:0 clamp(12px,3vw,28px);
 }
 .toast{
   display:inline-flex;align-items:center;gap:10px;
@@ -745,8 +745,6 @@ textarea{resize:vertical;min-height:70px}
   </div>
 </header>
 
-<div class="status" id="status" role="status" aria-live="polite"></div>
-
 <main id="main" tabindex="-1">
   <div class="grid">
 
@@ -865,6 +863,10 @@ textarea{resize:vertical;min-height:70px}
 
   </div>
 </main>
+
+<!-- Status / activity updates live below the panels so a toast appearing or
+     clearing can never shift the panel grid. -->
+<div class="status" id="status" role="status" aria-live="polite"></div>
 
 <footer class="foot">
   <p>Your dashboard is saved in this browser and, when signed in, synced privately to your account.</p>

@@ -186,6 +186,18 @@ test("refreshNews keeps cached stories when every fetch fails (source-level guar
     "the old unconditional overwrite (which emptied the feed on outages) is gone");
 });
 
+/* ---------------- status/activity updates placement ---------------- */
+
+test("status updates render below the panels so they cannot shift them", () => {
+  const statusAt = html.indexOf('id="status"');
+  const mainEnd = html.indexOf("</main>");
+  const footerAt = html.indexOf("<footer");
+  assert.ok(statusAt > -1 && mainEnd > -1, "status element and </main> exist");
+  assert.ok(statusAt > mainEnd, "status (#status toast area) sits after </main>, below every panel");
+  assert.ok(footerAt === -1 || statusAt < footerAt, "status sits before the footer");
+  assert.equal((html.match(/id="status"/g) || []).length, 1, "exactly one #status element");
+});
+
 /* ---------------- proxy server retry ---------------- */
 
 test("server fetchUpstream: retries transient failures and swaps UA when blocked", async () => {

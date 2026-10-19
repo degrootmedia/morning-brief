@@ -42,3 +42,6 @@
   (`supabase functions deploy proxy`) to pick up the retry hardening; the local
   server and Electron app get it automatically. Existing saved data needs no
   migration (same state shape).
+- Follow-up: moved the status/activity toast area (`#status`) below `</main>`
+  so updates appear under all panels and never shift them; verified in Edge
+  (panel tops identical before/during/after a toast) and rebuilt `dist/`.
