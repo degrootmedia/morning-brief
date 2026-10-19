@@ -5,6 +5,7 @@
  *   2. Editing saved hour entries (update / merge-on-collision / delete handled by caller)
  *   3. News feed hardening (proxy fallback chain, JSON unwrap, never trust an empty response)
  *   4. Local proxy server upstream retry / User-Agent fallback
+ *   5. Greeting refreshes on a timer (morning/afternoon/evening without a restart)
  *
  * The dashboard is a single index.html with no build step, so the pure helpers
  * are extracted from the page <script> by name and exercised directly.
@@ -196,6 +197,18 @@ test("status updates render below the panels so they cannot shift them", () => {
   assert.ok(statusAt > mainEnd, "status (#status toast area) sits after </main>, below every panel");
   assert.ok(footerAt === -1 || statusAt < footerAt, "status sits before the footer");
   assert.equal((html.match(/id="status"/g) || []).length, 1, "exactly one #status element");
+});
+
+/* ---------------- greeting refresh ---------------- */
+
+test("greeting refreshes on a timer so it tracks the time of day without a restart", () => {
+  // renderGreeting recomputes morning/afternoon/evening from the current hour
+  // on every call; the bug was that nothing re-called it after boot. Assert
+  // boot schedules it on a repeating timer of an hour or less.
+  const m = html.match(/setInterval\(\s*renderGreeting\s*,\s*(\d+)\s*\)/);
+  assert.ok(m, "boot schedules renderGreeting with setInterval (not just once via renderAll)");
+  const ms = Number(m[1]);
+  assert.ok(ms > 0 && ms <= 60 * 60 * 1000, "greeting refresh interval is an hour or less (got " + ms + "ms)");
 });
 
 /* ---------------- proxy server retry ---------------- */

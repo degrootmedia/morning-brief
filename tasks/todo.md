@@ -45,3 +45,34 @@
 - Follow-up: moved the status/activity toast area (`#status`) below `</main>`
   so updates appear under all panels and never shift them; verified in Edge
   (panel tops identical before/during/after a toast) and rebuilt `dist/`.
+
+---
+
+# Plan — greeting refreshes during the day (no restart needed)
+
+## Findings
+- `renderGreeting()` (index.html) derives morning/afternoon/evening from the
+  current hour correctly, but its only callers are `renderAll()` at boot and
+  the Setup name input — nothing re-runs it, so the header goes stale.
+- Boot already runs several `setInterval`s (clock 15s, timer 1s,
+  hours/calendar 60s, server ping 20s); the greeting is the odd one out.
+
+## Tasks
+- [x] Failing test first: boot must schedule `renderGreeting` on a repeating
+  timer of an hour or less (`tests/dashboard.test.js`, source-level guard —
+  same pattern as the `refreshNews` test).
+- [x] Fix: `setInterval(renderGreeting, 60000)` alongside the other boot
+  timers. A minute check (well inside "every hour or so") so the greeting
+  flips promptly at noon/6pm instead of lagging up to an hour.
+- [x] Verify: `npm test` green; boot `node serve.js` and confirm in a real
+  browser that the greeting updates live without a reload.
+
+## Review
+- `npm test`: 8/8 pass (new greeting test was red before the fix, as expected).
+- Headless Edge against `node serve.js` (port 8797): page loaded at 12:xx
+  showing "Good afternoon"; the probe then stubbed the hour to 9am *without
+  reloading* and the header flipped to "Good morning" on the timer's next
+  tick, with no page exceptions. Throwaway probe kept at
+  `%TEMP%\probe-greeting.mjs` (not part of the project).
+- One changed line in `index.html`; no state or markup changes, so the
+  Electron app and PWA pick it up with no other action needed.

@@ -3140,6 +3140,7 @@ function boot(){
   renderAll();
   tickClock();
   setInterval(tickClock, 15000);
+  setInterval(renderGreeting, 60000);
   setInterval(tickTimer, 1000);
   setInterval(() => { renderHours(); renderCalendar(); }, 60000);
   if(rolledOver){
