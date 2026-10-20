@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Morning Brief — Daily Dashboard</title>
 <meta name="description" content="A colorful daily dashboard: calendar, work hours, projects, to-dos, curated tech news and app shortcuts — synced across your PC and phone.">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#fff3e2">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -142,15 +142,25 @@ a{color:var(--teal-dark)}
 .btn[disabled]{opacity:.5;cursor:not-allowed;transform:none;box-shadow:var(--shadow-sm)}
 
 /* ---------- Status / toast ---------- */
+/* Fixed to the viewport (bottom-right) so a toast is visible wherever the
+   user has scrolled; the element itself stays below </main> in the DOM so a
+   toast appearing or clearing can never shift the panel grid. */
 .status{
-  max-width:1360px;margin:14px auto 6px;padding:0 clamp(12px,3vw,28px);
+  position:fixed;right:16px;bottom:16px;z-index:70;
+  max-width:min(92vw,460px);margin:0;padding:0;pointer-events:none;
 }
+.status .toast{pointer-events:auto}
 .toast{
   display:inline-flex;align-items:center;gap:10px;
   background:var(--ink);color:var(--paper);border-radius:999px;
   padding:8px 16px;font-weight:700;font-size:.9rem;
   border:3px solid var(--ink);box-shadow:var(--shadow-sm);
   animation:pop .25s ease;
+}
+.toast-undo{
+  font:inherit;font-weight:800;cursor:pointer;
+  background:var(--marigold);color:#1b1b2f;
+  border:2px solid var(--paper);border-radius:999px;padding:2px 12px;
 }
 @keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
 
@@ -409,6 +419,57 @@ textarea{resize:vertical;min-height:70px}
 /* ---------- Footer ---------- */
 .foot{max-width:1360px;margin:26px auto 0;padding:0 clamp(12px,3vw,28px);color:var(--ink-soft);font-size:.82rem}
 .foot code{background:var(--paper-2);padding:1px 5px;border-radius:5px}
+
+/* ---------- Today focus strip ---------- */
+.today-strip{
+  background:var(--card);border:3px solid var(--ink);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:14px 16px;margin-bottom:var(--gap);
+}
+.today-strip h2{font-size:1.05rem;font-weight:800;margin-bottom:10px}
+.today-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.today-cell{min-width:0;border:2px dashed var(--ink);border-radius:var(--radius-sm);padding:9px 11px;background:var(--paper)}
+.today-cell h3{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-bottom:5px}
+.today-cell .t-main{font-weight:800;overflow-wrap:anywhere}
+.today-cell .t-sub{font-size:.82rem;color:var(--ink-soft)}
+.today-task{display:flex;align-items:flex-start;gap:7px;padding:3px 0}
+.today-task input[type=checkbox]{width:17px;height:17px;margin-top:1px;accent-color:var(--teal);flex:0 0 auto;cursor:pointer}
+.today-task .tt-text{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;font-weight:600;font-size:.9rem}
+.today-task .tt-text.overdue{color:var(--berry)}
+@media (max-width:1080px){.today-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.today-grid{grid-template-columns:1fr}}
+
+/* ---------- Filter / view switch rows ---------- */
+.view-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:-2px 0 10px}
+.view-row .spacer{flex:1 1 auto}
+.todo-actions{display:flex;gap:5px;flex:0 0 auto}
+.news-item.is-read{opacity:.55}
+.news-item.is-read .n-title{font-weight:500}
+.news-actions{display:flex;flex-direction:column;gap:5px;flex:0 0 auto}
+.news-actions .btn[aria-pressed=true]{background:var(--marigold)}
+.hours-nav{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+.hours-nav .spacer{flex:1 1 auto}
+.ev-actions{display:inline-flex;gap:4px;margin-left:8px;vertical-align:middle}
+
+/* ---------- Command palette (Ctrl+K) ---------- */
+.palette{
+  position:fixed;inset:0;z-index:80;display:grid;place-items:start center;
+  background:rgba(27,27,47,.55);padding:12vh 16px 16px;
+}
+.palette-card{
+  background:var(--card);border:3px solid var(--ink);border-radius:var(--radius);
+  box-shadow:var(--shadow);width:min(620px,100%);max-height:70vh;overflow:auto;padding:14px;
+}
+.palette-card input[type=text]{width:100%;font-size:1rem}
+.palette-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.palette-item{
+  display:flex;gap:9px;align-items:baseline;width:100%;text-align:left;cursor:pointer;
+  border:2px solid transparent;border-radius:var(--radius-sm);background:var(--paper);
+  padding:8px 10px;font:inherit;color:inherit;
+}
+.palette-item .pl-label{font-weight:700;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.palette-item .pl-hint{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+.palette-item[aria-selected=true]{border-color:var(--ink);background:var(--paper-2)}
+.palette-hint{font-size:.75rem;color:var(--ink-soft);margin-top:9px}
 
 /* =========================================================================
    Retro Mac theme — activated by <html data-theme="retro">
@@ -697,6 +758,47 @@ textarea{resize:vertical;min-height:70px}
 [data-theme="notebook"] .foot{color:#f0e6d2}
 [data-theme="notebook"] .foot code{background:#f3edd6;color:#2b3a67}
 
+/* =========================================================================
+   Dark theme — [data-theme="dark"] (also used by "Auto" on a dark OS).
+   Keeps the colorful neo-brutalist identity: same accents, ink swapped to a
+   warm off-white so borders/shadows read as light outlines on dark paper.
+   ========================================================================= */
+[data-theme="dark"]{
+  --ink:#f2ead9; --ink-soft:#b9b3a4;
+  --paper:#1d1d28; --paper-2:#2a2a38; --card:#23232f;
+  --shadow:6px 6px 0 rgba(0,0,0,.55);
+  --shadow-sm:3px 3px 0 rgba(0,0,0,.55);
+  --shadow-press:2px 2px 0 rgba(0,0,0,.55);
+}
+[data-theme="dark"] body{
+  background:
+    radial-gradient(1200px 600px at 12% -8%, #33305a 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #4a2c33 0%, transparent 50%),
+    linear-gradient(180deg,#17171f 0%, #1d1d28 100%);
+}
+[data-theme="dark"] .mascot{filter:drop-shadow(4px 4px 0 rgba(0,0,0,.6))}
+[data-theme="dark"] .clockbox{background:#111118;color:var(--ink)}
+[data-theme="dark"] .btn:hover{box-shadow:2px 2px 0 rgba(0,0,0,.55)}
+[data-theme="dark"] .btn:active{box-shadow:0 0 0 rgba(0,0,0,.55)}
+[data-theme="dark"] .btn-marigold{color:#1b1b2f}
+[data-theme="dark"] .tag,[data-theme="dark"] .status-pill{color:#1b1b2f}
+[data-theme="dark"] .tag.prio-med,[data-theme="dark"] .tag.prio-low{color:#1b1b2f}
+[data-theme="dark"] .status-active,[data-theme="dark"] .status-idea{color:#1b1b2f}
+[data-theme="dark"] .tab[aria-selected=true]{background:var(--ink);color:#1b1b2f}
+[data-theme="dark"] .toast{background:var(--ink);color:#1b1b2f;border-color:#000}
+[data-theme="dark"] .toast-undo{border-color:#1b1b2f}
+[data-theme="dark"] input[type=text],[data-theme="dark"] input[type=url],[data-theme="dark"] input[type=date],[data-theme="dark"] input[type=time],[data-theme="dark"] input[type=number],[data-theme="dark"] input[type=email],[data-theme="dark"] input[type=password],[data-theme="dark"] select,[data-theme="dark"] textarea{background:#17171f;color:var(--ink);color-scheme:dark}
+[data-theme="dark"] .ptask-text:focus,[data-theme="dark"] .ptask-edit-row .ptask-text{background:#17171f}
+[data-theme="dark"] .progress{background:#17171f}
+[data-theme="dark"] .event.now{background:#4a2430}
+[data-theme="dark"] table.ts thead th{color:#1b1b2f}
+[data-theme="dark"] .ts-editcell:hover,[data-theme="dark"] .ts-editcell:focus-visible{color:#1b1b2f}
+[data-theme="dark"] .ts-editcell.ts-addcell:hover,[data-theme="dark"] .ts-editcell.ts-addcell:focus-visible{color:#1b1b2f}
+[data-theme="dark"] .shortcut .tile,[data-theme="dark"] .icon-badge{color:#1b1b2f}
+[data-theme="dark"] .modal{background:rgba(5,5,10,.7)}
+[data-theme="dark"] .palette{background:rgba(5,5,10,.7)}
+[data-theme="dark"] ::selection{background:var(--marigold);color:#1b1b2f}
+
 /* ---------- Responsive ---------- */
 @media (max-width:1080px){
   .p-cal,.p-hours,.p-shortcuts{grid-column:span 6}
@@ -741,11 +843,17 @@ textarea{resize:vertical;min-height:70px}
   </div>
   <div class="topactions">
     <button class="btn btn-ghost" id="authBtn" type="button" style="display:none">Sign in</button>
+    <button class="btn" id="paletteBtn" type="button" title="Search and quick-add (Ctrl+K)">🔎 Ctrl+K</button>
     <button class="btn btn-marigold" id="setupBtn" type="button">⚙️ Setup</button>
   </div>
 </header>
 
 <main id="main" tabindex="-1">
+  <!-- Today focus strip: the synthesized "what next" view across panels. -->
+  <section class="today-strip" id="todayStrip" aria-labelledby="todayH">
+    <h2 id="todayH">📌 Today at a glance</h2>
+    <div class="today-grid" id="todayGrid"></div>
+  </section>
   <div class="grid">
 
     <!-- Calendar -->
@@ -785,6 +893,7 @@ textarea{resize:vertical;min-height:70px}
         <button class="btn btn-sm btn-tangerine" id="clockToggle" type="button">▶ Start timer</button>
         <button class="btn btn-sm" id="hoursLog" type="button">＋ Log time</button>
       </div>
+      <div class="hours-nav" id="hoursNav"></div>
       <div class="ts-wrap" id="timesheetWrap"></div>
     </section>
 
@@ -833,8 +942,12 @@ textarea{resize:vertical;min-height:70px}
           <option value="high">High</option>
           <option value="low">Low</option>
         </select>
+        <input type="date" id="todoDue" aria-label="Due date (optional)" title="Due date (optional)" style="width:auto">
+        <input type="text" id="todoProject" list="todoProjects" placeholder="Project (optional)" aria-label="Project (optional)" autocomplete="off" style="flex:0 1 150px">
+        <datalist id="todoProjects"></datalist>
         <button class="btn btn-sm btn-tangerine" type="submit">Add</button>
       </form>
+      <div class="view-row" id="todoFilters" role="group" aria-label="Filter to-dos"></div>
       <ul class="todo-list" id="todoList"></ul>
     </section>
 
@@ -847,6 +960,7 @@ textarea{resize:vertical;min-height:70px}
         <button class="btn btn-sm" id="newsSettings" type="button">Topics</button>
       </div>
       <div class="news-tabs" id="newsTabs" role="tablist" aria-label="News topics"></div>
+      <div class="view-row" id="newsViews" role="group" aria-label="Filter stories"></div>
       <p class="hint" id="newsMeta" style="margin:-4px 0 8px" aria-live="polite"></p>
       <ul class="news-list" id="newsList"></ul>
     </section>
@@ -878,6 +992,15 @@ textarea{resize:vertical;min-height:70px}
     <h3 id="modalTitle">Title</h3>
     <div id="modalBody"></div>
     <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<!-- Command palette (Ctrl+K): search everything + quick capture. -->
+<div class="palette" id="palette" hidden>
+  <div class="palette-card" role="dialog" aria-modal="true" aria-label="Search and quick add">
+    <input type="text" id="paletteInput" placeholder="Search projects, to-dos, notes, shortcuts — or type to add a to-do…" aria-label="Search or quick-add" autocomplete="off">
+    <ul class="palette-list" id="paletteList" role="listbox" aria-label="Results"></ul>
+    <p class="palette-hint">↑↓ navigate · Enter select · Esc close. Tip: “t Buy milk” adds a to-do, “n Idea…” adds a note.</p>
   </div>
 </div>
 
@@ -994,9 +1117,15 @@ const isDesktop = !!(window.morningBrief && window.morningBrief.version);
 const isCloud = !!(window.mbCloud && window.mbCloud.version);
 
 // Themes are applied via a data-theme attribute on <html>. "default" = none.
-const THEMES = ["retro", "win95", "winxp", "notebook"];
+// "auto" is a stored preference, not a theme: it resolves to "dark" when the
+// OS prefers dark (and re-resolves live if the OS setting flips).
+const THEMES = ["retro", "win95", "winxp", "notebook", "dark"];
+function systemPrefersDark(){
+  return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+}
 function applyTheme(t){
-  if(THEMES.includes(t)) document.documentElement.dataset.theme = t;
+  const resolved = t === "auto" ? (systemPrefersDark() ? "dark" : "default") : t;
+  if(THEMES.includes(resolved)) document.documentElement.dataset.theme = resolved;
   else document.documentElement.removeAttribute("data-theme");
 }
 let serverOnline = false;
@@ -1028,7 +1157,7 @@ function defaultState(){
     notes: [],
     hours: { weekStart: null, entries: [], active: null, history: [] },
     shortcuts: DEFAULT_SHORTCUTS.map(s => ({ ...s })),
-    news: { topics: DEFAULT_TOPICS.map(t => ({ ...t, feeds: [...t.feeds], items: [], lastFetch: null })), blocklist: [...POLITICS_BLOCKLIST], activeTopic: "ai" },
+    news: { topics: DEFAULT_TOPICS.map(t => ({ ...t, feeds: [...t.feeds], items: [], lastFetch: null })), blocklist: [...POLITICS_BLOCKLIST], activeTopic: "ai", read: [], saved: [] },
     ui: { todoFilter: "open", openProjects: {}, openNotes: {}, panelOrder: ["cal","hours","shortcuts","work","personal","todos","news","notes"] }
   };
 }
@@ -1060,6 +1189,108 @@ const save = debounce(() => {
   if(isCloud && window.mbCloud) window.mbCloud.sync.markDirty();
 }, 300);
 
+/* ---------- pure helpers (steps 1+2; unit-tested in tests/dashboard.test.js) ---------- */
+// True when an ISO timestamp is missing/invalid or older than maxAgeMs.
+function isStale(iso, nowMs, maxAgeMs){
+  if(!iso) return true;
+  const t = new Date(iso).getTime();
+  if(isNaN(t)) return true;
+  return (nowMs - t) > maxAgeMs;
+}
+// Apply an edit to one todo without mutating the input list.
+function applyTodoEdit(todos, id, next){
+  const list = todos || [];
+  const idx = list.findIndex(function(t){ return t.id === id; });
+  if(idx < 0) return { todos: list, status: "missing" };
+  const out = list.map(function(t){ return Object.assign({}, t); });
+  const cur = out[idx];
+  const n = next || {};
+  if(typeof n.text === "string") cur.text = n.text.trim();
+  if(typeof n.prio === "string" && n.prio) cur.prio = n.prio;
+  if(typeof n.due === "string") cur.due = n.due;
+  if(typeof n.project === "string") cur.project = n.project.trim();
+  return { todos: out, status: "updated" };
+}
+// Split a todo list into what remains and the completed items being cleared
+// (returned so the caller can offer Undo).
+function clearCompletedTodos(todos){
+  const list = todos || [];
+  return {
+    todos: list.filter(function(t){ return !t.done; }),
+    removed: list.filter(function(t){ return t.done; })
+  };
+}
+// The few tasks that matter today: open only, overdue/due-today ranked ahead
+// of undated, priority breaks ties, earliest due next. Input is not mutated.
+function topTodayTasks(todos, today, limit){
+  const rank = { high: 0, med: 1, low: 2 };
+  const score = function(t){
+    // Anything due today or earlier is the today set (rank 0); priority then
+    // orders the work for the day, earliest due breaks remaining ties.
+    const dueRank = t.due && t.due <= today ? 0 : (!t.due ? 1 : 2);
+    return [dueRank, (rank[t.prio] != null ? rank[t.prio] : 1), t.due || "9999-99-99"];
+  };
+  return (todos || []).filter(function(t){ return t && !t.done; }).slice().sort(function(a, b){
+    const x = score(a), y = score(b);
+    for(let i = 0; i < x.length; i++){ if(x[i] < y[i]) return -1; if(x[i] > y[i]) return 1; }
+    return 0;
+  }).slice(0, limit || 3);
+}
+// One "next action" per not-done project: its first unchecked task.
+function projectNextActions(work, personal){
+  const out = [];
+  const scan = function(list, bucket){
+    (list || []).forEach(function(p){
+      if(!p || p.status === "done") return;
+      const tasks = Array.isArray(p.tasks) ? p.tasks : [];
+      const next = tasks.find(function(t){ return t && !t.done; });
+      if(next) out.push({ bucket: bucket, projectId: p.id, projectName: p.name || "", taskId: next.id, taskText: next.text || "" });
+    });
+  };
+  scan(work, "work");
+  scan(personal, "personal");
+  return out;
+}
+// Serialize hour entries (already flattened by the caller) as CSV.
+function hoursToCSV(entries){
+  const cell = function(v){
+    const s = String(v == null ? "" : v);
+    const needsQuote = s.indexOf(",") !== -1 || s.indexOf('"') !== -1 || s.indexOf("\n") !== -1 || s.indexOf("\r") !== -1;
+    return needsQuote ? '"' + s.split('"').join('""') + '"' : s;
+  };
+  const rows = ["Date,Client,Project,Hours,Minutes,Notes"];
+  (entries || []).slice().sort(function(a, b){
+    const x = (a.date || "") + (a.client || "") + (a.project || "");
+    const y = (b.date || "") + (b.client || "") + (b.project || "");
+    return x < y ? -1 : (x > y ? 1 : 0);
+  }).forEach(function(e){
+    const mins = e.minutes || 0;
+    const hrs = Math.round((mins / 60) * 100) / 100;
+    rows.push([cell(e.date), cell(e.client), cell(e.project), String(hrs), String(mins), cell(e.note)].join(","));
+  });
+  return rows.join("\n") + "\n";
+}
+// Toggle a story in the saved list (keyed by link; stores a copy so a saved
+// story survives the feed cache being replaced on refresh).
+function toggleSavedNews(saved, item){
+  const list = (saved || []).slice();
+  if(!item || !item.link) return list;
+  const i = list.findIndex(function(s){ return s && s.link === item.link; });
+  if(i >= 0){ list.splice(i, 1); return list; }
+  list.unshift({ title: item.title || "", link: item.link, date: item.date || "", summary: item.summary || "", feedName: item.feedName || "" });
+  return list;
+}
+// Case-insensitive substring filter over palette label + hint.
+function paletteFilter(items, query){
+  const q = String(query == null ? "" : query).trim().toLowerCase();
+  const list = items || [];
+  if(!q) return list.slice();
+  return list.filter(function(it){
+    const hay = ((it && it.label) || "") + " " + ((it && it.hint) || "");
+    return hay.toLowerCase().indexOf(q) !== -1;
+  });
+}
+
 /* ---------- toast ---------- */
 let toastTimer;
 function toast(msg){
@@ -1067,6 +1298,19 @@ function toast(msg){
   el.innerHTML = `<span class="toast">${esc(msg)}</span>`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.innerHTML = ""; }, 3200);
+}
+// Toast with an Undo button, for deletes. Shows longer so it can be used.
+function toastUndo(msg, onUndo){
+  const el = $("#status");
+  el.innerHTML = `<span class="toast">${esc(msg)} <button type="button" class="toast-undo" id="toastUndoBtn">Undo</button></span>`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.innerHTML = ""; }, 6500);
+  const btn = $("#toastUndoBtn");
+  if(btn) btn.addEventListener("click", () => {
+    clearTimeout(toastTimer);
+    el.innerHTML = "";
+    try{ onUndo(); }catch(e){}
+  });
 }
 
 /* ---------- modal ---------- */
@@ -1415,7 +1659,7 @@ function renderCalendar(){
       return `<li class="event${isNow ? " now" : ""}${e.allDay ? " all-day" : ""}"${e.calColor ? ` style="--cal:${esc(e.calColor)}"` : ""}>
         <span class="ev-time">${esc(time)}</span>
         <span>
-          <span class="ev-title">${esc(e.title)}${e.calName ? ` <span class="ev-cal-tag">${esc(e.calName)}</span>` : ""}</span>
+          <span class="ev-title">${esc(e.title)}${e.calName ? ` <span class="ev-cal-tag">${esc(e.calName)}</span>` : ""}${e.source === "manual" ? `<span class="ev-actions"><button class="btn btn-sm" type="button" data-mevedit="${e.id}" aria-label="Edit event “${esc(e.title)}”" title="Edit event">✎</button><button class="btn btn-sm" type="button" data-mevdel="${e.id}" aria-label="Delete event “${esc(e.title)}”" title="Delete event">✕</button></span>` : ""}</span>
           ${e.location ? `<span class="ev-loc">📍 ${esc(e.location)}</span>` : ""}
         </span>
       </li>`;
@@ -1532,11 +1776,15 @@ async function fetchIcs(url, proxies){
   }
   return { ok: false, error: lastErr || "no proxy reachable" };
 }
-async function syncCalendar(){
+async function syncCalendar(opts){
+  const quiet = !!(opts && opts.quiet);
   const cals = (state.calendar.calendars || []).filter(c => c.enabled !== false && c.url);
-  if(!cals.length){ toast("Add a calendar URL in Setup → Calendar first."); openSetup("calendar"); return; }
+  if(!cals.length){
+    if(quiet) return; // auto-refresh: nothing configured — stay silent
+    toast("Add a calendar URL in Setup → Calendar first."); openSetup("calendar"); return;
+  }
   const proxies = getProxies();
-  toast(`Syncing ${cals.length} calendar${cals.length > 1 ? "s" : ""}…`);
+  if(!quiet) toast(`Syncing ${cals.length} calendar${cals.length > 1 ? "s" : ""}…`);
   const results = await Promise.all(cals.map(async cal => ({ cal, r: await fetchIcs(cal.url, proxies) })));
   const events = [], okNames = [], failNames = [];
   for(const { cal, r } of results){
@@ -1550,11 +1798,11 @@ async function syncCalendar(){
   if(okNames.length){
     state.calendar.events = events;
     state.calendar.lastSync = new Date().toISOString();
-    save(); renderCalendar();
+    save(); renderCalendar(); renderToday();
   }
   if(failNames.length && !okNames.length) toast("⚠️ Calendar sync failed: " + failNames.join("; "));
   else if(failNames.length) toast(`📅 Synced ${okNames.join(", ")}. Failed: ${failNames.join("; ")}`);
-  else toast(`📅 Synced ${events.length} events from ${okNames.join(", ")}.`);
+  else if(!quiet) toast(`📅 Synced ${events.length} events from ${okNames.join(", ")}.`);
 }
 function importICSFile(file){
   const reader = new FileReader();
@@ -1568,24 +1816,40 @@ function importICSFile(file){
   };
   reader.readAsText(file);
 }
-function addManualEvent(){
-  openModal("Add an event", `
-    <div class="field"><label for="evTitle">Title</label><input id="evTitle" type="text" placeholder="Design review…"></div>
+function addManualEvent(){ manualEventDialog(null); }
+function manualEventDialog(existing){
+  const ev = existing || { id: uid(), title: "", date: todayKey(), start: "09:00", end: "10:00", location: "" };
+  openModal(existing ? "Edit event" : "Add an event", `
+    <div class="field"><label for="evTitle">Title</label><input id="evTitle" type="text" value="${esc(ev.title)}" placeholder="Design review…"></div>
     <div class="row">
-      <div class="field"><label for="evDate">Date</label><input id="evDate" type="date" value="${todayKey()}"></div>
-      <div class="field"><label for="evStart">Start</label><input id="evStart" type="time" value="09:00"></div>
-      <div class="field"><label for="evEnd">End</label><input id="evEnd" type="time" value="10:00"></div>
+      <div class="field"><label for="evDate">Date</label><input id="evDate" type="date" value="${esc(ev.date || todayKey())}"></div>
+      <div class="field"><label for="evStart">Start</label><input id="evStart" type="time" value="${esc(ev.start || "09:00")}"></div>
+      <div class="field"><label for="evEnd">End</label><input id="evEnd" type="time" value="${esc(ev.end || "10:00")}"></div>
     </div>
-    <div class="field"><label for="evLoc">Location <span class="hint" style="display:inline">(optional)</span></label><input id="evLoc" type="text" placeholder="Zoom / Studio B…"></div>
+    <div class="field"><label for="evLoc">Location <span class="hint" style="display:inline">(optional)</span></label><input id="evLoc" type="text" value="${esc(ev.location || "")}" placeholder="Zoom / Studio B…"></div>
   `, [
+    ...(existing ? [{ label: "Delete", className: "btn-berry", onClick: () => { closeModal(); deleteManualEventWithUndo(ev.id); } }] : []),
     { label: "Cancel", className: "btn-ghost" },
-    { label: "Add event", className: "btn-teal", onClick: () => {
+    { label: existing ? "Save" : "Add event", className: "btn-teal", onClick: () => {
         const title = $("#evTitle").value.trim();
         if(!title){ toast("Give the event a title."); return; }
-        state.calendar.manual.push({ id: uid(), title, date: $("#evDate").value || todayKey(), start: $("#evStart").value || "09:00", end: $("#evEnd").value || "10:00", location: $("#evLoc").value.trim() });
-        closeModal(); save(); renderCalendar(); toast("Event added.");
+        const obj = { id: ev.id, title, date: $("#evDate").value || todayKey(), start: $("#evStart").value || "09:00", end: $("#evEnd").value || "10:00", location: $("#evLoc").value.trim() };
+        const i = state.calendar.manual.findIndex(x => x.id === ev.id);
+        if(i >= 0) state.calendar.manual[i] = obj; else state.calendar.manual.push(obj);
+        closeModal(); save(); renderCalendar(); renderToday(); toast(existing ? "Event updated." : "Event added.");
       }}
   ]);
+}
+function deleteManualEventWithUndo(id){
+  const idx = state.calendar.manual.findIndex(x => x.id === id);
+  if(idx < 0) return;
+  const removed = state.calendar.manual[idx];
+  state.calendar.manual = state.calendar.manual.filter(x => x.id !== id);
+  save(); renderCalendar(); renderToday();
+  toastUndo("Deleted event: " + removed.title, () => {
+    state.calendar.manual.splice(Math.min(idx, state.calendar.manual.length), 0, removed);
+    save(); renderCalendar(); renderToday();
+  });
 }
 
 /* =========================================================================
@@ -1704,12 +1968,36 @@ function applyEntryEdit(entries, id, next){
   out[idx] = { ...out[idx], date: next.date, client: c, project: p, minutes: next.minutes, note };
   return { entries: out, status: "updated" };
 }
+// Every saved entry, current week first then archived History weeks — the
+// flat list history browsing/editing and the CSV export all work from.
+function allHoursEntries(){
+  const out = (state.hours.entries || []).slice();
+  (state.hours.history || []).forEach(w => (w.entries || []).forEach(e => out.push(e)));
+  return out;
+}
+function findHoursEntry(id){
+  return allHoursEntries().find(x => x.id === id) || null;
+}
+// Replace the whole hours store from a flat entry list (normalizeHours
+// re-buckets entries into current week vs History by date).
+function commitHoursEntries(flat){
+  state.hours = normalizeHours({ entries: flat, history: [], active: state.hours.active });
+}
+function exportHoursCSV(){
+  const flat = allHoursEntries();
+  if(!flat.length){ toast("No time logged yet — nothing to export."); return; }
+  download("morning-brief-hours.csv", hoursToCSV(flat), "text/csv");
+  toast(`⤓ Exported ${flat.length} time entr${flat.length > 1 ? "ies" : "y"} as CSV.`);
+}
+// Which week the timesheet is showing: null = the current week, otherwise a
+// History weekStart key. In-memory only (not synced/persisted).
+let hoursViewWeek = null;
 function editHoursEntry(id){
-  const e = state.hours.entries.find(x => x.id === id);
+  const e = findHoursEntry(id);
   if(!e){ toast("That entry is no longer here."); renderHours(); return; }
-  const ws = state.hours.weekStart || weekStartKey();
+  const ws = weekStartKey(parseDateKey(e.date));
   const we = addDays(ws, 6);
-  const week = currentWeekEntries();
+  const week = entriesInWeek(allHoursEntries(), ws, we);
   const hours = Math.round(((e.minutes || 0) / 60) * 100) / 100;
   openModal("Edit time entry", `
     <div class="row">
@@ -1724,26 +2012,28 @@ function editHoursEntry(id){
   `, [
     { label: "Delete", className: "btn-berry", onClick: () => {
         closeModal();
-        const label = [e.client, e.project].filter(Boolean).join(" · ") || "this entry";
-        confirmAction(`Delete ${fmtHours(e.minutes || 0)}h for “${label}” on ${e.date}?`, () => {
-          state.hours.entries = state.hours.entries.filter(x => x.id !== e.id);
-          save(); renderHours(); toast("Entry deleted.");
-        });
+        const before = allHoursEntries();
+        commitHoursEntries(before.filter(x => x.id !== e.id));
+        save(); renderHours(); renderToday();
+        toastUndo("Entry deleted.", () => { commitHoursEntries(before); save(); renderHours(); renderToday(); });
       }},
     { label: "Cancel", className: "btn-ghost" },
     { label: "Save changes", className: "btn-tangerine", onClick: () => {
         const hrs = parseFloat($("#eeHours").value) || 0;
         if(hrs <= 0){ toast("Enter an hour amount, or use Delete to remove the entry."); return; }
-        const r = applyEntryEdit(state.hours.entries, e.id, {
-          date: clampToWeek($("#eeDate").value || e.date),
+        let date = $("#eeDate").value || e.date;
+        if(date < ws) date = ws;
+        if(date > we) date = we;
+        const r = applyEntryEdit(allHoursEntries(), e.id, {
+          date,
           client: $("#eeClient").value,
           project: $("#eeProject").value,
           minutes: Math.round(hrs * 60),
           note: $("#eeNote").value
         });
         if(r.status === "missing"){ toast("That entry is no longer here."); closeModal(); renderHours(); return; }
-        state.hours.entries = r.entries;
-        closeModal(); save(); renderHours();
+        commitHoursEntries(r.entries);
+        closeModal(); save(); renderHours(); renderToday();
         toast(r.status === "merged" ? "Entry merged into the matching row." : "Entry updated.");
       }}
   ]);
@@ -1752,7 +2042,7 @@ function editHoursEntry(id){
 // A timesheet cell normally holds one entry; if several share it (e.g. casing
 // differences from older data), let the user pick which one to edit.
 function editHoursCell(ids){
-  const found = (ids || []).map(id => state.hours.entries.find(x => x.id === id)).filter(Boolean);
+  const found = (ids || []).map(id => findHoursEntry(id)).filter(Boolean);
   if(!found.length){ toast("That entry is no longer here."); renderHours(); return; }
   if(found.length === 1){ editHoursEntry(found[0].id); return; }
   openModal("Edit time entry", `
@@ -1765,9 +2055,29 @@ function editHoursCell(ids){
 }
 
 function renderHours(){
-  const start = state.hours.weekStart || weekStartKey();
+  const curStart = state.hours.weekStart || weekStartKey();
+  // History browsing: hoursViewWeek names an archived week; fall back to the
+  // current week if that week no longer exists (e.g. after an edit/undo).
+  const historyWeeks = (state.hours.history || []).map(w => w.weekStart);
+  if(hoursViewWeek && !historyWeeks.includes(hoursViewWeek)) hoursViewWeek = null;
+  const isCurrent = !hoursViewWeek;
+  const start = isCurrent ? curStart : hoursViewWeek;
   const days = weekDays(start);
-  $("#hoursWeek").textContent = "Week of " + fmtDate(start);
+  $("#hoursWeek").textContent = (isCurrent ? "Week of " : "History · week of ") + fmtDate(start);
+  // Week navigation + CSV export. Weeks are only the ones that actually have
+  // entries (archived weeks + the current week), so Prev/Next skip gaps.
+  const nav = $("#hoursNav");
+  if(nav){
+    const allWeeks = [...new Set([...historyWeeks, curStart])].sort();
+    const prevKey = allWeeks.filter(w => w < start).pop() || "";
+    const nextKey = allWeeks.find(w => w > start) || "";
+    const keyFor = w => w === curStart ? "current" : w;
+    nav.innerHTML =
+      `<button class="btn btn-sm" type="button" data-hweek="${esc(prevKey ? keyFor(prevKey) : "")}" ${prevKey ? "" : "disabled"} aria-label="Previous week">← Prev</button>`
+      + (isCurrent ? "" : `<button class="btn btn-sm btn-teal" type="button" data-hweek="current">This week</button>`)
+      + `<button class="btn btn-sm" type="button" data-hweek="${esc(nextKey ? keyFor(nextKey) : "")}" ${nextKey ? "" : "disabled"} aria-label="Next week">Next →</button>`
+      + `<span class="spacer"></span><button class="btn btn-sm" type="button" id="hoursCsv">⤓ CSV</button>`;
+  }
 
   const today = todayKey();
   let total = 0, todayMin = 0;
@@ -1783,16 +2093,17 @@ function renderHours(){
   const line = $("#timerLine"), btn = $("#clockToggle");
   if(state.hours.active){
     const started = new Date(state.hours.active.startedAt);
-    const who = [state.hours.active.client, state.hours.active.project].filter(Boolean).join(" · ");
+    const who = [state.hours.active.client, state.hours.active.project, state.hours.active.label].filter(Boolean).join(" · ");
     line.innerHTML = `⏺ Running since ${esc(fmtTime(started))}${who ? " — " + esc(who) : ""} — <span class="timer live" id="liveTimer">--:--</span>`;
     btn.textContent = "⏸ Stop & log"; btn.className = "btn btn-sm btn-berry";
   } else {
     line.textContent = "No timer running.";
     btn.textContent = "▶ Start timer"; btn.className = "btn btn-sm btn-tangerine";
   }
-  renderTimesheet(days);
+  const viewed = isCurrent ? state.hours.entries : ((state.hours.history || []).find(w => w.weekStart === start) || {}).entries || [];
+  renderTimesheet(days, viewed, isCurrent);
 }
-function renderTimesheet(days){
+function renderTimesheet(days, viewedEntries, isCurrent){
   const wrap = $("#timesheetWrap");
   const rows = new Map();
   const add = (client, project, date, minutes, entryId) => {
@@ -1803,14 +2114,16 @@ function renderTimesheet(days){
     if(entryId){ (row.cellIds[date] = row.cellIds[date] || []).push(entryId); }
     else if(minutes){ row.cellLive[date] = true; }
   };
-  state.hours.entries.forEach(e => add(e.client, e.project, e.date, e.minutes || 0, e.id));
-  if(state.hours.active){
+  (viewedEntries || []).forEach(e => add(e.client, e.project, e.date, e.minutes || 0, e.id));
+  if(isCurrent && state.hours.active){
     const a = state.hours.active;
     add(a.client, a.project, clampToWeek(todayKey(new Date(a.startedAt))), liveMinutes(), null);
   }
   const list = [...rows.values()].sort((a, b) => (a.client + "\u0000" + a.project).localeCompare(b.client + "\u0000" + b.project));
   if(!list.length){
-    wrap.innerHTML = `<p class="hint">No time logged this week yet. Use “＋ Log time”, or start the timer.</p>`;
+    wrap.innerHTML = isCurrent
+      ? `<p class="hint">No time logged this week yet. Use “＋ Log time”, or start the timer.</p>`
+      : `<p class="hint">No time logged in this archived week.</p>`;
     return;
   }
   const dayTotals = {}, clientTotals = {};
@@ -1839,6 +2152,7 @@ function renderTimesheet(days){
       if(r.cellLive[d.key]){
         return `<td title="Timer running — stop it to log this time">${m ? fmtHours(m) : "·"}</td>`;
       }
+      if(!isCurrent) return `<td class="ts-empty">·</td>`;
       return `<td class="ts-cell ts-empty"><button type="button" class="ts-editcell ts-addcell" data-hadd="${d.key}" data-hclient="${esc(r.client)}" data-hproject="${esc(r.project)}" title="Add time — ${esc(label)}" aria-label="Add time, ${esc(label)}">·</button></td>`;
     }).join("");
     body.push(`<tr><td class="ts-proj" title="${esc((r.client ? r.client + " · " : "") + r.project)}">${esc(r.project || "—")}</td>${cells}<td class="ts-total">${fmtHours(r.total)}</td></tr>`);
@@ -1847,17 +2161,30 @@ function renderTimesheet(days){
   wrap.innerHTML = `<table class="ts"><thead>${head}</thead><tbody>${body.join("")}${foot}</tbody></table><p class="hint" style="margin-top:6px">Tip: click any day cell to edit that entry — or an empty cell to add time there.</p>`;
 }
 function tickTimer(){
+  if(!state.hours.active) return;
+  const s = Math.floor(liveMinutes() * 60);
+  const label = `${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`;
   const el = $("#liveTimer");
-  if(el && state.hours.active){
-    const s = Math.floor(liveMinutes() * 60);
-    el.textContent = `${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`;
-  }
+  if(el) el.textContent = label;
+  $$("[data-today-live]").forEach(x => { x.textContent = label; });
 }
 function toggleClock(){
   if(state.hours.active){ stopTimer(); return; }
-  state.hours.active = { startedAt: new Date().toISOString(), client: "", project: "" };
-  save(); renderHours();
-  toast("▶ Timer started.");
+  startTimerFor({});
+}
+// Start the (single) timer, optionally pre-classified from a task/to-do:
+// project is filled in and the task text rides along as the label, so the
+// "Log timer" dialog opens already filled instead of blank.
+function startTimerFor(prefill){
+  const p = prefill || {};
+  if(state.hours.active){
+    const who = [state.hours.active.client, state.hours.active.project, state.hours.active.label].filter(Boolean).join(" · ");
+    toast("⏺ A timer is already running" + (who ? " (" + who + ")" : "") + " — stop it first to switch.");
+    return;
+  }
+  state.hours.active = { startedAt: new Date().toISOString(), client: p.client || "", project: p.project || "", label: p.label || "" };
+  save(); renderHours(); renderToday();
+  toast("▶ Timer started" + (p.label ? ": " + p.label : "") + ".");
 }
 function stopTimer(){
   const started = new Date(state.hours.active.startedAt);
@@ -1872,18 +2199,18 @@ function stopTimer(){
     </div>
     <div class="row">
       <div class="field"><label for="tmHours">Hours</label><input id="tmHours" type="number" min="0" step="0.25" value="${elapsed}"></div>
-      <div class="field"><label for="tmNote">Notes <span class="hint" style="display:inline">(optional)</span></label><input id="tmNote" type="text"></div>
+      <div class="field"><label for="tmNote">Notes <span class="hint" style="display:inline">(optional)</span></label><input id="tmNote" type="text" value="${esc(state.hours.active.label || "")}"></div>
     </div>
   `, [
     { label: "Discard", className: "btn-ghost", onClick: () => {
-        state.hours.active = null; closeModal(); save(); renderHours(); toast("Timer discarded.");
+        state.hours.active = null; closeModal(); save(); renderHours(); renderToday(); toast("Timer discarded.");
       }},
     { label: "Log it", className: "btn-tangerine", onClick: () => {
         const hours = parseFloat($("#tmHours").value) || 0;
         if(hours <= 0){ toast("Enter an hour amount."); return; }
         logEntry({ date: clampToWeek(todayKey(started)), client: $("#tmClient").value, project: $("#tmProject").value, minutes: Math.round(hours * 60), note: $("#tmNote").value.trim() });
         state.hours.active = null;
-        closeModal(); save(); renderHours(); toast(`⏹ Logged ${fmtHours(Math.round(hours * 60))}h.`);
+        closeModal(); save(); renderHours(); renderToday(); toast(`⏹ Logged ${fmtHours(Math.round(hours * 60))}h.`);
       }}
   ]);
   wireSuggest($("#tmClient"), $("#tmProjects"));
@@ -2245,6 +2572,7 @@ function renderProjectTasks(bucket, p){
     <li class="ptask">
       <input type="checkbox" data-ptoggle="${t.id}" data-bucket="${bucket}" data-pid="${p.id}"${t.done ? " checked" : ""} aria-label="Mark task done">
       <input type="text" class="ptask-text${t.done ? " done" : ""}" value="${esc(t.text)}" data-prename="${t.id}" data-bucket="${bucket}" data-pid="${p.id}" aria-label="Task text">
+      <button class="btn btn-sm" type="button" data-timer-task="${t.id}" data-bucket="${bucket}" data-pid2="${p.id}" aria-label="Start timer for “${esc(t.text)}”" title="Start timer">▶</button>
       <button class="btn btn-sm ptask-del" type="button" data-pdel="${t.id}" data-bucket="${bucket}" data-pid="${p.id}" aria-label="Delete task">✕</button>
     </li>`).join("");
   return `
@@ -2419,17 +2747,40 @@ function serializeNotes(){
 /* =========================================================================
    TODOS
    ========================================================================= */
+function todoProjectNames(){
+  const names = [];
+  ["work", "personal"].forEach(b => (state[b] || []).forEach(p => { if(p.name) names.push(p.name); }));
+  (state.todos || []).forEach(t => { if(t.project) names.push(t.project); });
+  return uniqueSorted(names);
+}
 function renderTodos(){
   const list = $("#todoList");
   const open = state.todos.filter(t => !t.done).length;
+  const doneCount = state.todos.length - open;
   $("#todoCount").textContent = open + " open";
-  const items = state.todos.slice().sort((a, b) => {
+  // Project suggestions for the quick-add form.
+  const dl = $("#todoProjects");
+  if(dl) dl.innerHTML = todoProjectNames().map(n => `<option value="${esc(n)}"></option>`).join("");
+  // Filter switch (persisted in ui.todoFilter) + clear-completed.
+  const filter = ["open", "all", "done"].includes(state.ui.todoFilter) ? state.ui.todoFilter : "open";
+  state.ui.todoFilter = filter;
+  const filters = $("#todoFilters");
+  if(filters){
+    filters.innerHTML = [["open", "Open " + open], ["all", "All " + state.todos.length], ["done", "Done " + doneCount]]
+      .map(([id, label]) => `<button class="tab" type="button" data-tfilter="${id}" aria-selected="${filter === id}">${label}</button>`).join("")
+      + `<span class="spacer"></span>`
+      + (doneCount ? `<button class="btn btn-sm btn-ghost" type="button" id="todoClearDone">Clear completed (${doneCount})</button>` : "");
+  }
+  const items = state.todos.filter(t => filter === "all" ? true : filter === "done" ? t.done : !t.done).slice().sort((a, b) => {
     if(a.done !== b.done) return a.done ? 1 : -1;
     const rank = { high: 0, med: 1, low: 2 };
     if((rank[a.prio] ?? 1) !== (rank[b.prio] ?? 1)) return (rank[a.prio] ?? 1) - (rank[b.prio] ?? 1);
     return (a.due || "9999") .localeCompare(b.due || "9999");
   });
-  if(!items.length){ list.innerHTML = `<li class="empty">Nothing on the list. Nice.</li>`; return; }
+  if(!items.length){
+    list.innerHTML = `<li class="empty">${state.todos.length ? "Nothing in this view." : "Nothing on the list. Nice."}</li>`;
+    return;
+  }
   list.innerHTML = items.map(t => {
     const overdue = t.due && !t.done && t.due < todayKey();
     return `<li class="todo${t.done ? " done" : ""}" data-id="${t.id}">
@@ -2442,9 +2793,66 @@ function renderTodos(){
           ${t.project ? `<span class="tag">@${esc(t.project)}</span>` : ""}
         </div>
       </div>
-      <button class="btn btn-sm t-del" type="button" data-del="${t.id}" aria-label="Delete “${esc(t.text)}”">✕</button>
+      <span class="todo-actions">
+        <button class="btn btn-sm" type="button" data-timer-todo="${t.id}" aria-label="Start timer for “${esc(t.text)}”" title="Start timer">▶</button>
+        <button class="btn btn-sm" type="button" data-tedit="${t.id}" aria-label="Edit “${esc(t.text)}”" title="Edit">✎</button>
+        <button class="btn btn-sm t-del" type="button" data-del="${t.id}" aria-label="Delete “${esc(t.text)}”">✕</button>
+      </span>
     </li>`;
   }).join("");
+}
+function todoDialog(existing){
+  const t = existing || { id: uid(), text: "", prio: "med", due: "", project: "" };
+  openModal(existing ? "Edit to-do" : "New to-do", `
+    <div class="field"><label for="tdText">Task</label><input id="tdText" type="text" value="${esc(t.text)}" placeholder="What needs doing…"></div>
+    <div class="row">
+      <div class="field"><label for="tdPrio">Priority</label>
+        <select id="tdPrio">
+          ${[["high","High"],["med","Normal"],["low","Low"]].map(([v,l]) => `<option value="${v}"${(t.prio||"med")===v?" selected":""}>${l}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field"><label for="tdDue">Due date</label><input id="tdDue" type="date" value="${esc(t.due || "")}"></div>
+    </div>
+    <div class="field"><label for="tdProject">Project <span class="hint" style="display:inline">(optional)</span></label><input id="tdProject" type="text" list="tdProjects" autocomplete="off" value="${esc(t.project || "")}" placeholder="Cascade…">${datalistHTML("tdProjects", todoProjectNames())}</div>
+  `, [
+    ...(existing ? [{ label: "Delete", className: "btn-berry", onClick: () => { closeModal(); deleteTodoWithUndo(t.id); } }] : []),
+    { label: "Cancel", className: "btn-ghost" },
+    { label: existing ? "Save" : "Add", className: "btn-tangerine", onClick: () => {
+        const text = $("#tdText").value.trim();
+        if(!text){ toast("Type a task first."); return; }
+        const next = { text, prio: $("#tdPrio").value, due: $("#tdDue").value || "", project: $("#tdProject").value };
+        if(existing){
+          const r = applyTodoEdit(state.todos, t.id, next);
+          if(r.status === "missing"){ toast("That to-do is no longer here."); closeModal(); renderTodos(); renderToday(); return; }
+          state.todos = r.todos;
+        } else {
+          state.todos.unshift({ id: t.id, text, done: false, prio: next.prio, due: next.due, project: next.project.trim(), created: todayKey() });
+        }
+        closeModal(); save(); renderTodos(); renderToday(); toast(existing ? "To-do updated." : "To-do added.");
+      }}
+  ]);
+}
+function deleteTodoWithUndo(id){
+  const idx = state.todos.findIndex(x => x.id === id);
+  if(idx < 0) return;
+  const removed = state.todos[idx];
+  state.todos = state.todos.filter(x => x.id !== id);
+  save(); renderTodos(); renderToday();
+  toastUndo("Deleted: " + removed.text, () => {
+    state.todos.splice(Math.min(idx, state.todos.length), 0, removed);
+    save(); renderTodos(); renderToday();
+  });
+}
+function clearCompletedWithUndo(){
+  const r = clearCompletedTodos(state.todos);
+  if(!r.removed.length){ toast("No completed to-dos to clear."); return; }
+  const before = state.todos;
+  state.todos = r.todos;
+  save(); renderTodos(); renderToday();
+  toastUndo(`Cleared ${r.removed.length} completed to-do${r.removed.length > 1 ? "s" : ""}.`, () => {
+    state.todos = before;
+    save(); renderTodos(); renderToday();
+  });
 }
 
 /* =========================================================================
@@ -2495,10 +2903,57 @@ function isBlocked(item){
   const hay = (item.title + " " + (item.summary || "")).toLowerCase();
   return state.news.blocklist.some(w => w && hay.includes(w.toLowerCase()));
 }
+// Which slice of stories the panel shows: all | unread | saved (across topics).
+let newsView = "all";
+function newsReadSet(){ return new Set(state.news.read || []); }
+function newsSavedSet(){ return new Set((state.news.saved || []).map(s => s && s.link).filter(Boolean)); }
+function findNewsItem(link){
+  const all = [];
+  (state.news.topics || []).forEach(t => (t.items || []).forEach(i => all.push(i)));
+  (state.news.saved || []).forEach(i => all.push(i));
+  return all.find(i => i && i.link === link) || null;
+}
+function markNewsRead(link, rerender){
+  if(!link) return;
+  if(!Array.isArray(state.news.read)) state.news.read = [];
+  if(state.news.read.includes(link)) return;
+  state.news.read.push(link);
+  save();
+  if(rerender !== false) renderNews();
+  else {
+    // Link-click path: don't re-render under the user's pointer; just dim it.
+    $$("#newsList .news-item").forEach(li => {
+      const a = li.querySelector("[data-nlink]");
+      if(a && a.dataset.nlink === link) li.classList.add("is-read");
+    });
+  }
+}
+function toggleNewsRead(link){
+  if(!Array.isArray(state.news.read)) state.news.read = [];
+  if(state.news.read.includes(link)) state.news.read = state.news.read.filter(l => l !== link);
+  else state.news.read.push(link);
+  save(); renderNews();
+}
+function toggleNewsSaved(link){
+  const item = findNewsItem(link);
+  if(!item){ toast("That story is no longer here."); renderNews(); return; }
+  const wasSaved = newsSavedSet().has(link);
+  state.news.saved = toggleSavedNews(state.news.saved || [], item);
+  save(); renderNews();
+  toast(wasSaved ? "Removed from saved stories." : "⭐ Saved for later.");
+}
 function renderNews(){
   const tabs = $("#newsTabs");
   const topics = state.news.topics;
   const meta = $("#newsMeta");
+  const views = $("#newsViews");
+  const read = newsReadSet();
+  const savedSet = newsSavedSet();
+  if(views){
+    const savedCount = (state.news.saved || []).length;
+    views.innerHTML = [["all", "All"], ["unread", "Unread"], ["saved", "⭐ Saved " + savedCount]]
+      .map(([id, label]) => `<button class="tab" type="button" data-nview="${id}" aria-selected="${newsView === id}">${label}</button>`).join("");
+  }
   if(!topics.length){ tabs.innerHTML = ""; if(meta) meta.textContent = ""; $("#newsList").innerHTML = `<li class="empty">No topics yet. Click “Topics”.</li>`; return; }
   const active = topics.find(t => t.id === state.news.activeTopic) || topics[0];
   state.news.activeTopic = active.id;
@@ -2507,25 +2962,42 @@ function renderNews(){
     return `<button class="tab" role="tab" type="button" data-topic="${t.id}" aria-selected="${t.id === active.id}">${esc(t.name)}${n ? " " + n : ""}</button>`;
   }).join("");
   if(meta){
-    if(active.lastFetch){
+    if(newsView === "saved"){
+      meta.textContent = "Saved stories from every topic. They survive feed refreshes.";
+    } else if(active.lastFetch){
       const ageMs = Date.now() - new Date(active.lastFetch).getTime();
       meta.textContent = "Updated " + relTime(active.lastFetch) + (ageMs > 86400000 ? " — may be stale, hit ↻ Refresh." : ".");
     } else {
       meta.textContent = (active.items || []).length ? "Showing saved stories." : "";
     }
   }
-  const items = (active.items || []).filter(i => !isBlocked(i)).slice(0, 40);
+  let items;
+  if(newsView === "saved"){
+    items = (state.news.saved || []).filter(i => !isBlocked(i));
+  } else {
+    items = (active.items || []).filter(i => !isBlocked(i));
+    if(newsView === "unread") items = items.filter(i => !read.has(i.link));
+    items = items.slice(0, 40);
+  }
   if(!items.length){
-    $("#newsList").innerHTML = `<li class="empty">No stories cached for ${esc(active.name)}. Click “↻ Refresh”${state.settings.proxy ? "" : " — or set a CORS proxy in Setup"}.</li>`;
+    $("#newsList").innerHTML = newsView === "saved"
+      ? `<li class="empty">No saved stories yet. Tap ☆ on any story to keep it here.</li>`
+      : newsView === "unread"
+        ? `<li class="empty">All caught up — no unread stories in ${esc(active.name)}.</li>`
+        : `<li class="empty">No stories cached for ${esc(active.name)}. Click “↻ Refresh”${state.settings.proxy ? "" : " — or set a CORS proxy in Setup"}.</li>`;
     return;
   }
   $("#newsList").innerHTML = items.map(i => `
-    <li class="news-item">
+    <li class="news-item${read.has(i.link) ? " is-read" : ""}">
       <div class="n-body">
-        <a class="n-title" href="${esc(i.link)}" target="_blank" rel="noopener noreferrer">${esc(i.title)}</a>
+        <a class="n-title" href="${esc(i.link)}" target="_blank" rel="noopener noreferrer" data-nlink="${esc(i.link)}">${esc(i.title)}</a>
         <p class="n-src">${esc(i.feedName || hostOf(i.link))}${i.date ? " · " + esc(relTime(i.date)) : ""}</p>
         ${i.summary ? `<p class="n-sum">${esc(i.summary)}</p>` : ""}
       </div>
+      <span class="news-actions">
+        <button class="btn btn-sm" type="button" data-nsave="${esc(i.link)}" aria-pressed="${savedSet.has(i.link)}" aria-label="${savedSet.has(i.link) ? "Unsave" : "Save for later"}: ${esc(i.title)}" title="${savedSet.has(i.link) ? "Saved — tap to unsave" : "Save for later"}">${savedSet.has(i.link) ? "★" : "☆"}</button>
+        <button class="btn btn-sm" type="button" data-nread="${esc(i.link)}" aria-pressed="${read.has(i.link)}" aria-label="${read.has(i.link) ? "Mark unread" : "Mark read"}: ${esc(i.title)}" title="${read.has(i.link) ? "Mark unread" : "Mark read"}">${read.has(i.link) ? "↩" : "✓"}</button>
+      </span>
     </li>
   `).join("");
 }
@@ -2541,8 +3013,9 @@ function relTime(d){
   return new Date(t).toLocaleDateString([], { month: "short", day: "numeric" });
 }
 let newsRefreshing = false;
-async function refreshNews(onlyTopic){
-  if(newsRefreshing){ toast("Already fetching feeds…"); return; }
+async function refreshNews(onlyTopic, opts){
+  const quiet = !!(opts && opts.quiet);
+  if(newsRefreshing){ if(!quiet) toast("Already fetching feeds…"); return; }
   newsRefreshing = true;
   const btn = $("#newsRefresh");
   const btnLabel = btn ? btn.textContent : "";
@@ -2552,7 +3025,7 @@ async function refreshNews(onlyTopic){
     // Refresh server reachability first so the local/cloud relay is ranked right.
     await pingServer().catch(() => {});
     const prefixes = newsProxyCandidates();
-    toast("Fetching feeds…");
+    if(!quiet) toast("Fetching feeds…");
     let total = 0, errors = 0, updatedTopics = 0, staleTopics = 0;
     for(const topic of topics){
       if(!topic) continue;
@@ -2580,11 +3053,19 @@ async function refreshNews(onlyTopic){
       }
       total += (topic.items || []).length;
     }
+    // Prune read marks for stories that have aged out of every feed (saved
+    // stories keep theirs) so the read list can't grow without bound.
+    if(Array.isArray(state.news.read) && state.news.read.length){
+      const live = new Set();
+      state.news.topics.forEach(t => (t.items || []).forEach(i => live.add(i.link)));
+      (state.news.saved || []).forEach(i => live.add(i.link));
+      state.news.read = state.news.read.filter(l => live.has(l));
+    }
     save(); renderNews();
     if(updatedTopics && !staleTopics){
-      toast(`📡 Loaded ${total} stories${errors ? ` (${errors} feed${errors>1?"s":""} unreachable)` : ""}.`);
+      if(!quiet) toast(`📡 Loaded ${total} stories${errors ? ` (${errors} feed${errors>1?"s":""} unreachable)` : ""}.`);
     } else if(updatedTopics){
-      toast(`📡 Loaded ${total} stories. ${staleTopics} topic${staleTopics>1?"s":""} unreachable — kept previous stories.`);
+      if(!quiet) toast(`📡 Loaded ${total} stories. ${staleTopics} topic${staleTopics>1?"s":""} unreachable — kept previous stories.`);
     } else if(total){
       toast("⚠️ Couldn't refresh (all proxies unreachable) — showing saved stories.");
     } else {
@@ -2664,6 +3145,8 @@ function openSetup(tab){
       <div class="field" style="margin-top:14px"><label for="setTheme">Theme</label>
         <select id="setTheme">
           <option value="default"${(state.settings.theme || "default") === "default" ? " selected" : ""}>Default (colorful)</option>
+          <option value="dark"${state.settings.theme === "dark" ? " selected" : ""}>Dark</option>
+          <option value="auto"${state.settings.theme === "auto" ? " selected" : ""}>Auto (match system light/dark)</option>
           <option value="retro"${state.settings.theme === "retro" ? " selected" : ""}>Retro Mac (90s)</option>
           <option value="win95"${state.settings.theme === "win95" ? " selected" : ""}>Windows 95</option>
           <option value="winxp"${state.settings.theme === "winxp" ? " selected" : ""}>Windows XP</option>
@@ -2701,6 +3184,7 @@ function openSetup(tab){
       <p class="hint" style="margin-bottom:12px">Your dashboard is saved in this browser and, when signed in, synced to your account.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-sm" type="button" id="setExportJson">⤓ Export JSON backup</button>
+        <button class="btn btn-sm" type="button" id="setExportCsv">⤓ Export hours as CSV</button>
         <button class="btn btn-sm" type="button" id="setExportMd">⤓ Export Markdown files</button>
         <button class="btn btn-sm btn-berry" type="button" id="setReset">Reset everything</button>
       </div>`
@@ -2754,6 +3238,7 @@ function openSetup(tab){
     }
     if(id === "data"){
       $("#setExportJson").addEventListener("click", () => download("morning-brief-backup.json", JSON.stringify(state, null, 2), "application/json"));
+      $("#setExportCsv").addEventListener("click", () => exportHoursCSV());
       $("#setExportMd").addEventListener("click", () => {
         const bundle = ["todos.md","projects.md","hours.md","notes.md","shortcuts.md","news.md","calendar.md"].map(f => `# ${f}\n\n` + ({
           "todos.md": serializeTodos, "projects.md": serializeProjects, "hours.md": serializeHours, "notes.md": serializeNotes,
@@ -2766,6 +3251,187 @@ function openSetup(tab){
   }
   $$("[data-stab]").forEach(b => b.addEventListener("click", () => show(b.dataset.stab)));
   show(tab || "general");
+}
+
+/* =========================================================================
+   TODAY FOCUS STRIP — the cross-panel "what next" summary
+   ========================================================================= */
+function renderToday(){
+  const grid = $("#todayGrid");
+  if(!grid) return;
+  const now = Date.now();
+  // Next meeting (same selection rule as the Calendar panel).
+  const evs = allEventsForDay(todayKey());
+  const upcoming = evs.find(e => !e.allDay && new Date(e.end).getTime() > now && new Date(e.start).getTime() >= now - 60000)
+                || evs.find(e => !e.allDay && new Date(e.end).getTime() > now);
+  let meetMain = "Calendar clear", meetSub = evs.length ? evs.length + " event" + (evs.length > 1 ? "s" : "") + " today, all done." : "Nothing scheduled today.";
+  if(upcoming){
+    const s = new Date(upcoming.start);
+    const mins = Math.round((s.getTime() - now) / 60000);
+    meetMain = upcoming.title;
+    meetSub = (mins > 0
+      ? `Starts in ${mins < 60 ? mins + " min" : Math.floor(mins/60) + "h " + pad(mins%60) + "m"} · ${fmtTime(s)}`
+      : `In progress until ${fmtTime(new Date(upcoming.end))}`)
+      + (upcoming.location ? ` · ${upcoming.location}` : "");
+  }
+  // Focus tasks.
+  const today = todayKey();
+  const focus = topTodayTasks(state.todos, today, 3);
+  const overdueCount = state.todos.filter(t => !t.done && t.due && t.due < today).length;
+  const focusHTML = focus.length ? focus.map(t => `
+    <div class="today-task">
+      <input type="checkbox" data-toggle="${t.id}" aria-label="Mark “${esc(t.text)}” done">
+      <span class="tt-text${t.due && t.due < today ? " overdue" : ""}">${esc(t.text)}${t.project ? ` <span class="tag">@${esc(t.project)}</span>` : ""}</span>
+    </div>`).join("")
+    : `<p class="t-sub">No open to-dos. Add one below — or enjoy the quiet.</p>`;
+  // Project next actions (first two, work before personal).
+  const actions = projectNextActions(state.work, state.personal).slice(0, 2);
+  const actionsHTML = actions.length ? actions.map(a => `
+    <div class="today-task">
+      <span class="tt-text">${esc(a.taskText)}<br><span class="t-sub">${esc(a.projectName)} (${a.bucket})</span></span>
+      <button class="btn btn-sm" type="button" data-today-timer="${esc(a.taskText)}" data-today-project="${esc(a.projectName)}" aria-label="Start timer for “${esc(a.taskText)}”" title="Start timer">▶</button>
+    </div>`).join("")
+    : `<p class="t-sub">No open project tasks. Add tasks inside a project to see next actions here.</p>`;
+  // Hours.
+  let todayMin = 0, weekMin = 0;
+  state.hours.entries.forEach(e => { weekMin += e.minutes || 0; if(e.date === today) todayMin += e.minutes || 0; });
+  if(state.hours.active){
+    const live = liveMinutes();
+    weekMin += live;
+    if(todayKey(new Date(state.hours.active.startedAt)) === today) todayMin += live;
+  }
+  const timerSub = state.hours.active
+    ? `⏺ Timer running${state.hours.active.label ? ": " + esc(state.hours.active.label) : (state.hours.active.project ? ": " + esc(state.hours.active.project) : "")} — <span class="timer live" data-today-live>--:--</span>`
+    : "No timer running.";
+  grid.innerHTML = `
+    <div class="today-cell"><h3>Next meeting</h3><p class="t-main">${esc(meetMain)}</p><p class="t-sub">${esc(meetSub)}</p></div>
+    <div class="today-cell"><h3>Focus tasks${overdueCount ? ` · ${overdueCount} overdue` : ""}</h3>${focusHTML}</div>
+    <div class="today-cell"><h3>Project next actions</h3>${actionsHTML}</div>
+    <div class="today-cell"><h3>Hours</h3><p class="t-main">${fmtHours(todayMin)}h today · ${fmtHours(weekMin)}h this week</p><p class="t-sub">${timerSub}</p></div>`;
+}
+
+/* =========================================================================
+   AUTO-REFRESH — keep the brief fresh without button presses
+   ========================================================================= */
+const AUTO_REFRESH_MS = 15 * 60 * 1000;
+let autoRefreshing = false;
+async function maybeAutoRefresh(){
+  if(autoRefreshing) return;
+  autoRefreshing = true;
+  try{
+    await pingServer().catch(() => {});
+    const nowMs = Date.now();
+    const cals = (state.calendar.calendars || []).filter(c => c.enabled !== false && c.url);
+    if(cals.length && isStale(state.calendar.lastSync, nowMs, AUTO_REFRESH_MS)){
+      await syncCalendar({ quiet: true }).catch(() => {});
+    }
+    const newsStale = (state.news.topics || []).some(t => (t.feeds || []).length && isStale(t.lastFetch, Date.now(), AUTO_REFRESH_MS));
+    if(newsStale) await refreshNews(null, { quiet: true }).catch(() => {});
+  } finally {
+    autoRefreshing = false;
+  }
+}
+
+/* =========================================================================
+   COMMAND PALETTE (Ctrl+K) — search everything + quick capture
+   ========================================================================= */
+let paletteItems = [];
+let paletteShown = [];
+let paletteIndex = 0;
+let paletteLastFocus = null;
+function buildPaletteItems(){
+  const items = [];
+  const push = (icon, label, hint, run) => items.push({ icon, label, hint, run });
+  push("✅", "Add a to-do…", "Action", () => todoDialog(null));
+  push("📝", "New note…", "Action", () => noteDialog(null));
+  push("📅", "Add an event…", "Action", () => manualEventDialog(null));
+  push("⏱️", "Log time…", "Action", () => logTimeManual());
+  push(state.hours.active ? "⏸" : "▶", state.hours.active ? "Stop timer & log…" : "Start timer", "Action", () => toggleClock());
+  push("↻", "Sync calendar now", "Action", () => syncCalendar());
+  push("↻", "Refresh news now", "Action", () => refreshNews());
+  push("⤓", "Export hours as CSV", "Action", () => exportHoursCSV());
+  push("⚙️", "Open Setup", "Action", () => openSetup("general"));
+  (state.work || []).forEach(p => push("🏗️", p.name, "Work project", () => projectDialog("work", p)));
+  (state.personal || []).forEach(p => push("🎨", p.name, "Personal project", () => projectDialog("personal", p)));
+  state.todos.filter(t => !t.done).forEach(t => push("▢", t.text, "To-do" + (t.project ? " · @" + t.project : "") + " — Enter marks done", () => {
+    t.done = true; save(); renderTodos(); renderToday(); toast("✓ Done: " + t.text);
+  }));
+  (state.notes || []).forEach(n => push("📝", n.title || "Untitled note", "Note", () => noteDialog(n)));
+  state.shortcuts.filter(shortcutVisibleHere).forEach(s => push(s.icon || "🚀", s.name, "Launchpad", () => openShortcut(s.id)));
+  return items;
+}
+function paletteQuickActions(q){
+  // "t …" quick-adds a to-do, "n …" a note; a bare query offers todo first.
+  const out = [];
+  const text = String(q || "").trim();
+  if(!text) return out;
+  const m = text.match(/^([tn])\s+(.+)$/i);
+  const addTodo = txt => ({ icon: "＋", label: `Add to-do: ${txt}`, hint: "Quick capture", run: () => {
+    state.todos.unshift({ id: uid(), text: txt, done: false, prio: "med", due: "", project: "", created: todayKey() });
+    save(); renderTodos(); renderToday(); toast("To-do added.");
+  }});
+  const addNote = txt => ({ icon: "＋", label: `Add note: ${txt}`, hint: "Quick capture", run: () => {
+    state.notes.unshift({ id: uid(), title: txt, body: "", updated: Date.now() });
+    save(); renderNotes(); toast("Note added.");
+  }});
+  if(m) out.push(m[1].toLowerCase() === "t" ? addTodo(m[2].trim()) : addNote(m[2].trim()));
+  else out.push(addTodo(text), addNote(text));
+  return out;
+}
+function renderPalette(){
+  const q = $("#paletteInput").value;
+  paletteShown = [...paletteQuickActions(q), ...paletteFilter(paletteItems, q)].slice(0, 12);
+  if(paletteIndex >= paletteShown.length) paletteIndex = Math.max(0, paletteShown.length - 1);
+  $("#paletteList").innerHTML = paletteShown.length ? paletteShown.map((it, i) => `
+    <li><button class="palette-item" type="button" role="option" data-palette-i="${i}" aria-selected="${i === paletteIndex}">
+      <span aria-hidden="true">${esc(it.icon || "•")}</span>
+      <span class="pl-label">${esc(it.label)}</span>
+      <span class="pl-hint">${esc(it.hint || "")}</span>
+    </button></li>`).join("")
+    : `<li class="empty">No matches.</li>`;
+}
+function openPalette(){
+  paletteLastFocus = document.activeElement;
+  paletteItems = buildPaletteItems();
+  paletteIndex = 0;
+  $("#palette").hidden = false;
+  const input = $("#paletteInput");
+  input.value = "";
+  renderPalette();
+  input.focus();
+}
+function closePalette(){
+  $("#palette").hidden = true;
+  if(paletteLastFocus && paletteLastFocus.isConnected) paletteLastFocus.focus();
+}
+function runPaletteSelection(){
+  const it = paletteShown[paletteIndex];
+  if(!it) return;
+  closePalette();
+  try{ it.run(); }catch(e){ toast("⚠️ " + (e.message || e)); }
+}
+function wirePalette(){
+  const input = $("#paletteInput");
+  input.addEventListener("input", () => { paletteIndex = 0; renderPalette(); });
+  input.addEventListener("keydown", e => {
+    if(e.key === "ArrowDown"){ e.preventDefault(); paletteIndex = Math.min(paletteShown.length - 1, paletteIndex + 1); renderPalette(); }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); paletteIndex = Math.max(0, paletteIndex - 1); renderPalette(); }
+    else if(e.key === "Enter"){ e.preventDefault(); runPaletteSelection(); }
+    else if(e.key === "Escape"){ e.preventDefault(); closePalette(); }
+  });
+  $("#palette").addEventListener("mousedown", e => { if(e.target.id === "palette") closePalette(); });
+  $("#paletteList").addEventListener("click", e => {
+    const b = e.target.closest("[data-palette-i]");
+    if(!b) return;
+    paletteIndex = +b.dataset.paletteI;
+    runPaletteSelection();
+  });
+  document.addEventListener("keydown", e => {
+    if((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")){
+      e.preventDefault();
+      if($("#palette").hidden) openPalette(); else closePalette();
+    }
+  });
 }
 
 /* =========================================================================
@@ -2786,6 +3452,7 @@ function renderGreeting(){
 }
 function renderAll(){
   renderGreeting();
+  renderToday();
   renderCalendar();
   renderHours();
   renderShortcuts();
@@ -2958,6 +3625,8 @@ function applyPanelOrder(){
 /* ---------- wire up events ---------- */
 function wire(){
   $("#setupBtn").addEventListener("click", () => openSetup("general"));
+  $("#paletteBtn").addEventListener("click", () => openPalette());
+  wirePalette();
   $("#calSync").addEventListener("click", syncCalendar);
   $("#calAdd").addEventListener("click", addManualEvent);
   $("#calImport").addEventListener("click", () => $("#icsFile").click());
@@ -2975,9 +3644,9 @@ function wire(){
     e.preventDefault();
     const text = $("#todoText").value.trim();
     if(!text){ toast("Type a task first."); return; }
-    state.todos.unshift({ id: uid(), text, done: false, prio: $("#todoPrio").value, due: "", project: "", created: todayKey() });
-    $("#todoText").value = ""; $("#todoText").focus();
-    save(); renderTodos();
+    state.todos.unshift({ id: uid(), text, done: false, prio: $("#todoPrio").value, due: $("#todoDue").value || "", project: $("#todoProject").value.trim(), created: todayKey() });
+    $("#todoText").value = ""; $("#todoDue").value = ""; $("#todoProject").value = ""; $("#todoText").focus();
+    save(); renderTodos(); renderToday();
   });
 
   // Launchpad: drag tiles to reorder. Hidden (platform-filtered) shortcuts keep
@@ -3020,26 +3689,67 @@ function wire(){
     if(pdel){
       const bucket = pdel.dataset.bucket;
       const proj = state[bucket].find(p => p.id === pdel.dataset.pid);
-      if(proj){ proj.tasks = (proj.tasks || []).filter(t => t.id !== pdel.dataset.pdel); save(); renderProjects(bucket, projectListId(bucket)); }
+      if(proj){ proj.tasks = (proj.tasks || []).filter(t => t.id !== pdel.dataset.pdel); save(); renderProjects(bucket, projectListId(bucket)); renderToday(); }
       return;
     }
     const del = e.target.closest("[data-del]");
-    if(del){
-      const t = state.todos.find(x => x.id === del.dataset.del);
-      state.todos = state.todos.filter(x => x.id !== del.dataset.del);
-      save(); renderTodos();
-      if(t) toast("Deleted: " + t.text);
+    if(del){ deleteTodoWithUndo(del.dataset.del); return; }
+    const tedit = e.target.closest("[data-tedit]");
+    if(tedit){ todoDialog(state.todos.find(x => x.id === tedit.dataset.tedit)); return; }
+    const tfilter = e.target.closest("[data-tfilter]");
+    if(tfilter){ state.ui.todoFilter = tfilter.dataset.tfilter; save(); renderTodos(); return; }
+    if(e.target.closest("#todoClearDone")){ clearCompletedWithUndo(); return; }
+    const ttimer = e.target.closest("[data-timer-todo]");
+    if(ttimer){
+      const t = state.todos.find(x => x.id === ttimer.dataset.timerTodo);
+      if(t) startTimerFor({ client: "", project: t.project || "", label: t.text });
       return;
     }
+    const ptimer = e.target.closest("[data-timer-task]");
+    if(ptimer){
+      const bucket = ptimer.dataset.bucket;
+      const proj = state[bucket].find(p => p.id === ptimer.dataset.pid2);
+      const task = proj && (proj.tasks || []).find(x => x.id === ptimer.dataset.timerTask);
+      if(proj && task) startTimerFor({ client: "", project: proj.name, label: task.text });
+      return;
+    }
+    const todayTimer = e.target.closest("[data-today-timer]");
+    if(todayTimer){
+      startTimerFor({ client: "", project: todayTimer.dataset.todayProject || "", label: todayTimer.dataset.todayTimer || "" });
+      return;
+    }
+    const mevedit = e.target.closest("[data-mevedit]");
+    if(mevedit){ manualEventDialog(state.calendar.manual.find(x => x.id === mevedit.dataset.mevedit)); return; }
+    const mevdel = e.target.closest("[data-mevdel]");
+    if(mevdel){ deleteManualEventWithUndo(mevdel.dataset.mevdel); return; }
+    const hweek = e.target.closest("[data-hweek]");
+    if(hweek){
+      hoursViewWeek = hweek.dataset.hweek === "current" ? null : hweek.dataset.hweek;
+      renderHours();
+      return;
+    }
+    if(e.target.closest("#hoursCsv")){ exportHoursCSV(); return; }
+    const nsave = e.target.closest("[data-nsave]");
+    if(nsave){ toggleNewsSaved(nsave.dataset.nsave); return; }
+    const nread = e.target.closest("[data-nread]");
+    if(nread){ toggleNewsRead(nread.dataset.nread); return; }
+    const nview = e.target.closest("[data-nview]");
+    if(nview){ newsView = nview.dataset.nview; renderNews(); return; }
+    const nlink = e.target.closest("[data-nlink]");
+    if(nlink){ markNewsRead(nlink.dataset.nlink, false); /* link still opens normally */ }
     const nedit = e.target.closest("[data-nedit]");
     if(nedit){ noteDialog(state.notes.find(n => n.id === nedit.dataset.nedit)); return; }
     const ndel = e.target.closest("[data-ndel]");
     if(ndel){
-      const n = state.notes.find(x => x.id === ndel.dataset.ndel);
+      const idx = state.notes.findIndex(x => x.id === ndel.dataset.ndel);
+      const n = state.notes[idx];
       state.notes = state.notes.filter(x => x.id !== ndel.dataset.ndel);
       if(state.ui.openNotes) delete state.ui.openNotes[ndel.dataset.ndel];
       save(); renderNotes();
-      if(n) toast("Deleted: " + (n.title || "note"));
+      if(n) toastUndo("Deleted: " + (n.title || "note"), () => {
+        state.notes.splice(Math.min(idx, state.notes.length), 0, n);
+        save(); renderNotes();
+      });
       return;
     }
     const nexp = e.target.closest("[data-nexpand]");
@@ -3063,7 +3773,7 @@ function wire(){
     const tg = e.target.closest("[data-toggle]");
     if(tg){
       const t = state.todos.find(x => x.id === tg.dataset.toggle);
-      if(t){ t.done = tg.checked; save(); renderTodos(); }
+      if(t){ t.done = tg.checked; save(); renderTodos(); renderToday(); }
       return;
     }
     const pt = e.target.closest("[data-ptoggle]");
@@ -3071,7 +3781,7 @@ function wire(){
       const bucket = pt.dataset.bucket;
       const proj = state[bucket].find(p => p.id === pt.dataset.pid);
       const task = proj && (proj.tasks || []).find(t => t.id === pt.dataset.ptoggle);
-      if(task){ task.done = pt.checked; save(); renderProjects(bucket, projectListId(bucket)); }
+      if(task){ task.done = pt.checked; save(); renderProjects(bucket, projectListId(bucket)); renderToday(); }
     }
   });
   document.addEventListener("input", e => {
@@ -3093,7 +3803,7 @@ function wire(){
     if(!proj) return;
     if(!Array.isArray(proj.tasks)) proj.tasks = [];
     proj.tasks.push({ id: uid(), text, done: false });
-    save(); renderProjects(bucket, projectListId(bucket));
+    save(); renderProjects(bucket, projectListId(bucket)); renderToday();
     const ni = $(projectListId(bucket)).querySelector(`[data-padd="${proj.id}"] input`);
     if(ni) ni.focus();
   });
@@ -3132,6 +3842,9 @@ function boot(){
   if(!Array.isArray(state.ui.panelOrder) || !state.ui.panelOrder.length) state.ui.panelOrder = defaultState().ui.panelOrder;
   // Migration: theme setting + per-shortcut platform (app/file → desktop).
   if(!state.settings.theme) state.settings.theme = "default";
+  // Migration: news read/saved collections.
+  if(!Array.isArray(state.news.read)) state.news.read = [];
+  if(!Array.isArray(state.news.saved)) state.news.saved = [];
   state.shortcuts = (state.shortcuts || []).map(s => ({ platform: (s.kind === "web" ? "all" : "desktop"), ...s }));
   applyTheme(state.settings.theme);
 
@@ -3142,7 +3855,19 @@ function boot(){
   setInterval(tickClock, 15000);
   setInterval(renderGreeting, 60000);
   setInterval(tickTimer, 1000);
-  setInterval(() => { renderHours(); renderCalendar(); }, 60000);
+  setInterval(() => { renderHours(); renderCalendar(); renderToday(); }, 60000);
+  // Auto theme: follow live OS light/dark changes while set to "auto".
+  if(window.matchMedia){
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onOsTheme = () => { if(state.settings.theme === "auto") applyTheme("auto"); };
+    if(typeof mq.addEventListener === "function") mq.addEventListener("change", onOsTheme);
+    else if(typeof mq.addListener === "function") mq.addListener(onOsTheme);
+  }
+  // Keep the brief fresh on open and whenever the tab/window regains focus
+  // (staleness-gated inside maybeAutoRefresh, so this is cheap when fresh).
+  maybeAutoRefresh();
+  document.addEventListener("visibilitychange", () => { if(!document.hidden) maybeAutoRefresh(); });
+  window.addEventListener("focus", () => maybeAutoRefresh());
   if(rolledOver){
     save();
     setTimeout(() => toast("📅 New week — last week’s hours were archived to History."), 1200);

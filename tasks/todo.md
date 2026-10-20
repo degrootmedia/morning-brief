@@ -76,3 +76,48 @@
   `%TEMP%\probe-greeting.mjs` (not part of the project).
 - One changed line in `index.html`; no state or markup changes, so the
   Electron app and PWA pick it up with no other action needed.
+
+---
+
+# Plan — UX/productivity steps 1+2 (auto-refresh, todos, dark, Today, Ctrl+K, timer-from-task, history/CSV, news read/save)
+
+## Scope (agreed 2026-10-20)
+- Step 1: auto-refresh on open; viewport-fixed undo toasts; todo edit +
+  due/project + filters + clear-completed; manual-event edit/delete; dark theme.
+- Step 2: Today focus strip; Ctrl+K capture/search; timer-from-task; hours
+  history browser + CSV export; news read/save state.
+
+## Tasks
+- [x] Failing tests first (`tests/dashboard.test.js`): pure helpers (`isStale`,
+  `applyTodoEdit`, `clearCompletedTodos`, `topTodayTasks`, `projectNextActions`,
+  `hoursToCSV`, `toggleSavedNews`, `paletteFilter`) + source guards for wiring.
+- [x] Implement in `index.html` reusing existing patterns (`openModal`, `toast`,
+  `save`, per-panel renders, theme blocks); state additions only
+  (`news.read`/`news.saved`, theme `dark`/`auto`, timer `label`) with boot
+  migrations; no new dependencies, no build step.
+- [x] Verify: `npm test` green, then headless Edge against `node serve.js`
+  exercising each new public behavior (seeded state, public DOM paths only).
+
+## Review
+- `npm test`: 24/24 pass (16 new; all 16 were red before the implementation).
+- Headless Edge against `node serve.js` (port 8799; seeded state; local RSS +
+  ICS fixture server): 43/43 checks passed — auto calendar/news refresh on open
+  with zero clicks (fixture hit counts confirm), Today strip content, todo
+  due/project quick-add + edit dialog + filters + clear-completed/undo +
+  delete/undo, manual-event edit/delete/undo, dark + auto theme via Setup,
+  timer-from-task and timer-from-todo (Log timer dialog inherits
+  project/note), Ctrl+K open/search/quick-capture/Esc, hours Prev/Next history
+  + archived-entry edit (120→180 min) + CSV bytes (header, `"Acme, Co"`
+  quoting, history rows), news save/read/unread/saved + open-marks-read, no
+  page exceptions. First probe run had 4 timing-race failures against the
+  300 ms `save()` debounce in headless; longer waits + one diagnostic run
+  proved them probe artifacts (the "failed" edit already showed 180 in the
+  CSV captured later in the same run). Screenshots (light/dark/palette)
+  eyeballed; fixed a dark-theme `.chip` contrast miss found there. Throwaway
+  probes kept at `%TEMP%\probe-steps12.mjs` / `%TEMP%\probe-shots.mjs` (not
+  part of the project).
+- State changes are additive and migrated in `boot()`; existing data needs no
+  migration. The hosted Supabase schema is untouched (state is still one JSON
+  blob), so no redeploy is needed for sync to carry the new fields. Electron
+  `dist/` rebuild is only needed to ship the updated `index.html` inside the
+  desktop app (`npm run dist`); browser mode picks it up immediately.

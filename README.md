@@ -71,7 +71,9 @@ Browser mode (below) is unchanged and still fully supported.
 Click **⚙️ Setup** in the top-right.
 
 ### 1. General
-Add your name so the header greets you.
+Add your name so the header greets you. You can also pick a **theme** —
+including **Dark**, or **Auto** to follow your operating system's light/dark
+setting.
 
 ### 2. Calendar (Google Calendar)
 You can add as many calendars as you like — for example a **Work** calendar and
@@ -156,6 +158,30 @@ AI runs through **Gab AI** (OpenAI-compatible). Add your API key in
 **Setup → AI** — it's stored locally and only sent to your own local server,
 which forwards it to Gab. AI needs the local server running (the desktop app, or
 `Start Dashboard.bat`).
+
+### 7. Everyday productivity
+
+- **Today at a glance** — a strip at the top synthesizes your next meeting,
+  your top focus tasks (overdue and due-today first), each project's next
+  action, and today's hours. Check tasks off right there.
+- **Ctrl+K** (or the 🔎 button) — search projects, to-dos, notes and
+  shortcuts, run actions, or quick-capture: type `t Buy milk` to add a to-do,
+  `n Idea…` for a note.
+- **Auto-refresh** — the calendar and news refresh themselves when you open
+  the dashboard (and when you come back to the tab), whenever the data is more
+  than ~15 minutes old. The manual Sync/Refresh buttons still work.
+- **To-Dos** take an optional due date and project, can be edited (✎), and
+  have Open/All/Done filters plus **Clear completed**. Deletes everywhere
+  offer **Undo**.
+- **Timer from work** — hit ▶ on any project task or to-do (or in the Today
+  strip) to start the timer already labelled with that task; the Log timer
+  dialog opens pre-filled.
+- **Work Hours history** — browse archived weeks with ← Prev / Next → (entries
+  stay editable), and export everything with **⤓ CSV**.
+- **Signal Feed** — ☆ saves a story for later (saved stories survive
+  refreshes), ✓ marks it read, and All/Unread/Saved switch the view. Opening
+  a story marks it read automatically. Manual calendar events can now be
+  edited and deleted, too.
 
 ---
 

@@ -243,3 +243,206 @@ test("server fetchUpstream: retries transient failures and swaps UA when blocked
   assert.equal(r.status, 404);
   assert.equal(calls, 1);
 });
+
+/* ---------------- steps 1+2: auto-refresh ---------------- */
+
+test("isStale: missing/invalid timestamps are stale, fresh ones are not", () => {
+  const isStale = extractFn("isStale");
+  const now = Date.parse("2026-10-20T12:00:00.000Z");
+  const max = 15 * 60 * 1000;
+  assert.equal(isStale(null, now, max), true, "never synced is stale");
+  assert.equal(isStale("", now, max), true);
+  assert.equal(isStale("not-a-date", now, max), true, "garbage timestamp is stale");
+  assert.equal(isStale("2026-10-20T11:50:00.000Z", now, max), false, "10 min old is fresh");
+  assert.equal(isStale("2026-10-20T11:44:59.000Z", now, max), true, "just past the window is stale");
+  assert.equal(isStale("2026-10-20T11:45:00.000Z", now, max), false, "exactly at the window edge is still fresh");
+});
+
+test("boot triggers the auto-refresh check (source-level guard)", () => {
+  const boot = html.slice(html.indexOf("function boot()"));
+  assert.match(boot, /maybeAutoRefresh\(\)/, "boot must kick off an automatic freshness check");
+  const fn = html.slice(html.indexOf("function maybeAutoRefresh"), html.indexOf("function maybeAutoRefresh") + 1500);
+  assert.match(fn, /isStale\(/, "auto-refresh must be staleness-gated, not unconditional");
+  assert.match(fn, /syncCalendar\(/, "auto-refresh covers the calendar");
+  assert.match(fn, /refreshNews\(/, "auto-refresh covers the news feed");
+});
+
+/* ---------------- steps 1+2: todos ---------------- */
+
+test("applyTodoEdit: updates fields immutably, reports missing ids", () => {
+  const applyTodoEdit = extractFn("applyTodoEdit");
+  const base = () => ([
+    { id: "a", text: "Old", done: false, prio: "med", due: "", project: "", created: "2026-10-20" },
+    { id: "b", text: "Keep", done: true, prio: "low", due: "", project: "", created: "2026-10-20" }
+  ]);
+  const r = applyTodoEdit(base(), "a", { text: " New text ", prio: "high", due: "2026-10-22", project: "Cascade" });
+  assert.equal(r.status, "updated");
+  assert.deepEqual(r.todos[0],
+    { id: "a", text: "New text", done: false, prio: "high", due: "2026-10-22", project: "Cascade", created: "2026-10-20" },
+    "text is trimmed; done/created survive an edit");
+  const before = base();
+  const miss = applyTodoEdit(before, "nope", { text: "X" });
+  assert.equal(miss.status, "missing");
+  assert.deepEqual(miss.todos, before);
+  const src = base();
+  applyTodoEdit(src, "a", { text: "Z" });
+  assert.deepEqual(src, base(), "input list/objects are not mutated");
+});
+
+test("clearCompletedTodos: removes only done items and reports them for undo", () => {
+  const clearCompletedTodos = extractFn("clearCompletedTodos");
+  const list = [
+    { id: "1", text: "open", done: false },
+    { id: "2", text: "done1", done: true },
+    { id: "3", text: "done2", done: true }
+  ];
+  const r = clearCompletedTodos(list);
+  assert.deepEqual(r.todos.map(t => t.id), ["1"]);
+  assert.deepEqual(r.removed.map(t => t.id), ["2", "3"], "removed items are returned so the UI can undo");
+  assert.equal(list.length, 3, "input is not mutated");
+  assert.deepEqual(clearCompletedTodos([]).removed, []);
+});
+
+test("todo UI wires due/project fields, filters, edit and clear-completed (source guard)", () => {
+  assert.ok(html.includes('id="todoDue"'), "quick-add form has a due-date field");
+  assert.ok(html.includes('id="todoProject"'), "quick-add form has a project field");
+  assert.match(html, /data-tfilter/, "Open/All/Done filter controls exist");
+  assert.match(html, /data-tedit/, "todo rows expose an edit control");
+  assert.match(html, /state\.ui\.todoFilter/, "rendering actually honours ui.todoFilter");
+  const formAt = html.indexOf('$("#todoForm")');
+  const formSrc = html.slice(formAt, formAt + 900);
+  assert.match(formSrc, /\$\("#todoDue"\)\.value/, "the quick-add form stores the chosen due date");
+  assert.match(formSrc, /\$\("#todoProject"\)\.value/, "the quick-add form stores the chosen project");
+  assert.ok(html.includes("toastUndo("), "destructive actions offer undo");
+  assert.match(html, /\.status\{[^}]*position:fixed/, "toasts are fixed to the viewport, not buried below the panels");
+});
+
+test("manual calendar events can be edited and deleted (source guard)", () => {
+  assert.match(html, /data-mevedit/, "manual events render an edit control");
+  assert.match(html, /data-mevdel/, "manual events render a delete control");
+  assert.match(html, /state\.calendar\.manual\s*=\s*state\.calendar\.manual\.filter/, "delete removes from state.calendar.manual");
+});
+
+/* ---------------- steps 1+2: dark theme ---------------- */
+
+test("dark theme exists and can follow the OS (source guard)", () => {
+  assert.match(html, /\[data-theme="dark"\]\{/, "a dark theme token block exists");
+  assert.match(html, /THEMES\s*=\s*\[[^\]]*"dark"/, "dark is a selectable theme");
+  assert.match(html, /value="auto"/, "Setup offers an Auto (match system) theme");
+  assert.match(html, /prefers-color-scheme:\s*dark/, "Auto resolves via the OS color-scheme preference");
+  assert.match(html, /color-scheme" content="light dark"/, "the page advertises both color schemes");
+});
+
+/* ---------------- steps 1+2: Today strip + timer-from-task ---------------- */
+
+test("topTodayTasks: overdue and due-today first, done excluded, limit applied", () => {
+  const topTodayTasks = extractFn("topTodayTasks");
+  const todos = [
+    { id: "1", text: "future low", done: false, prio: "low", due: "2026-11-01" },
+    { id: "2", text: "overdue med", done: false, prio: "med", due: "2026-10-18" },
+    { id: "3", text: "today high", done: false, prio: "high", due: "2026-10-20" },
+    { id: "4", text: "done overdue", done: true, prio: "high", due: "2026-10-01" },
+    { id: "5", text: "no due high", done: false, prio: "high", due: "" },
+    { id: "6", text: "overdue high", done: false, prio: "high", due: "2026-10-19" }
+  ];
+  const top = topTodayTasks(todos, "2026-10-20", 3);
+  assert.deepEqual(top.map(t => t.id), ["6", "3", "2"],
+    "overdue-high, then due-today-high, then overdue-med; done and future/low fall off");
+  assert.deepEqual(topTodayTasks([], "2026-10-20", 3), []);
+  assert.equal(todos[0].id, "1", "input order is not mutated");
+});
+
+test("projectNextActions: first open task of each active project, done projects skipped", () => {
+  const projectNextActions = extractFn("projectNextActions");
+  const work = [
+    { id: "w1", name: "Cascade", status: "active", tasks: [
+      { id: "t1", text: "Storyboard", done: true },
+      { id: "t2", text: "Animatic pass", done: false },
+      { id: "t3", text: "Sound", done: false } ] },
+    { id: "w2", name: "Shipped", status: "done", tasks: [ { id: "t4", text: "Leftover", done: false } ] },
+    { id: "w3", name: "All done", status: "active", tasks: [ { id: "t5", text: "Fin", done: true } ] }
+  ];
+  const personal = [
+    { id: "p1", name: "Robot kit", status: "idea", tasks: [ { id: "t6", text: "Order servos", done: false } ] }
+  ];
+  const r = projectNextActions(work, personal);
+  assert.deepEqual(r.map(x => x.projectName + ":" + x.taskText), ["Cascade:Animatic pass", "Robot kit:Order servos"]);
+  assert.equal(r[0].bucket, "work");
+  assert.equal(r[1].bucket, "personal");
+});
+
+test("Today strip and timer-from-task are wired (source guard)", () => {
+  assert.ok(html.includes('id="todayStrip"'), "a Today strip exists above the grid");
+  const renderAllSrc = html.slice(html.indexOf("function renderAll()"), html.indexOf("function renderAll()") + 400);
+  assert.match(renderAllSrc, /renderToday\(\)/, "renderAll refreshes the Today strip");
+  assert.match(html, /data-timer-task/, "project tasks can start the timer");
+  assert.match(html, /function startTimerFor\(/, "timer start accepts a prefill (client/project/label)");
+  assert.match(html, /data-timer-todo/, "todos can start the timer");
+});
+
+/* ---------------- steps 1+2: command palette ---------------- */
+
+test("paletteFilter: case-insensitive match over label and hint, empty query keeps all", () => {
+  const paletteFilter = extractFn("paletteFilter");
+  const items = [
+    { label: "Cascade animatic", hint: "Work project" },
+    { label: "Log time", hint: "Action" },
+    { label: "Buy servos", hint: "To-do · Robot kit" }
+  ];
+  assert.equal(paletteFilter(items, "").length, 3);
+  assert.deepEqual(paletteFilter(items, "cas").map(i => i.label), ["Cascade animatic"]);
+  assert.deepEqual(paletteFilter(items, "ROBOT").map(i => i.label), ["Buy servos"], "hint text is searchable");
+  assert.deepEqual(paletteFilter(items, "zzz"), []);
+});
+
+test("Ctrl+K palette is wired (source guard)", () => {
+  assert.ok(html.includes('id="palette"'), "palette overlay exists");
+  assert.match(html, /\(e\.ctrlKey \|\| e\.metaKey\)[^\n]*"k"/i, "Ctrl/Cmd+K opens the palette");
+  assert.ok(html.includes('id="paletteBtn"'), "a discoverable palette button exists in the header");
+});
+
+/* ---------------- steps 1+2: hours history + CSV ---------------- */
+
+test("hoursToCSV: header, date order, quoting of commas/quotes/newlines", () => {
+  const hoursToCSV = extractFn("hoursToCSV");
+  const csv = hoursToCSV([
+    { date: "2026-10-14", client: "Beta", project: "Logo", minutes: 90, note: "plain" },
+    { date: "2026-10-12", client: "Acme, Co", project: 'Say "hi"', minutes: 61, note: "line1\nline2" }
+  ]);
+  const lines = csv.trimEnd().split("\n");
+  assert.equal(lines[0], "Date,Client,Project,Hours,Minutes,Notes");
+  assert.equal(lines[1], '2026-10-12,"Acme, Co","Say ""hi""",1.02,61,"line1\nline2"'.split("\n")[0],
+    "earlier date first; comma/quote fields are quoted with doubled quotes");
+  assert.ok(csv.indexOf('"line1\nline2"') > -1, "embedded newlines stay inside the quoted field");
+  assert.ok(csv.includes("2026-10-14,Beta,Logo,1.5,90,plain"));
+  assert.equal(hoursToCSV([]).trimEnd(), "Date,Client,Project,Hours,Minutes,Notes", "empty input still yields a header");
+});
+
+test("hours history browser and CSV export are wired (source guard)", () => {
+  assert.match(html, /data-hweek/, "previous/next week navigation exists");
+  assert.ok(html.includes('id="hoursCsv"'), "a CSV export control exists in the Hours panel");
+  assert.match(html, /hoursToCSV\(/, "the export uses the CSV serializer");
+  assert.match(html, /\.csv",\s*hoursToCSV|hoursToCSV\([^)]*\)[^;]*"text\/csv"/is, "CSV downloads as a .csv/text-csv file");
+});
+
+/* ---------------- steps 1+2: news read/save ---------------- */
+
+test("toggleSavedNews: saves a copy, unsaves by link, never duplicates or mutates", () => {
+  const toggleSavedNews = extractFn("toggleSavedNews");
+  const item = { title: "Blender 9.0", link: "https://ex.com/1", date: "2026-10-20", summary: "s", feedName: "ex.com" };
+  let saved = toggleSavedNews([], item);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].link, "https://ex.com/1");
+  saved = toggleSavedNews(saved, item);
+  assert.equal(saved.length, 0, "toggling the same link again unsaves it");
+  const before = [item];
+  toggleSavedNews(before, { title: "Other", link: "https://ex.com/2" });
+  assert.deepEqual(before, [item], "input array is not mutated");
+});
+
+test("news read/save state is wired (source guard)", () => {
+  assert.match(html, /read: \[\], saved: \[\]/, "default news state carries read/saved collections");
+  assert.match(html, /data-nsave/, "stories expose a save toggle");
+  assert.match(html, /state\.news\.read/, "read state is read/written");
+  assert.match(html, /data-nview/, "All/Unread/Saved view switch exists");
+});
