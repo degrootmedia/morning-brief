@@ -37,6 +37,7 @@
   var statusCbs = [];
   var pushTimer = null;
   var pullTimer = null;
+  var pulling = false;
   var readyResolve;
   var ready = new Promise(function (r) { readyResolve = r; });
 
@@ -75,19 +76,28 @@
   /* ---------- sync ---------- */
   async function pull() {
     if (!sb || !session || !impl) return;
-    var res = await sb.from(TABLE).select("state, updated_at").eq("user_id", session.user.id).maybeSingle();
-    if (res.error) { setStatus("offline"); return; }
-    if (!res.data) { await push(); return; }
-    var remoteAt = res.data.updated_at;
-    if (!syncedAt || remoteAt > syncedAt) {
-      if (dirty) { await push(); }
-      else {
-        impl.setState(res.data.state || {});
-        setSyncedAt(remoteAt);
-        setStatus("synced");
+    if (pulling) return;
+    pulling = true;
+    try {
+      var check = await sb.from(TABLE).select("updated_at").eq("user_id", session.user.id).maybeSingle();
+      if (check.error) { setStatus("offline"); return; }
+      if (!check.data) { await push(); return; }
+      var remoteAt = check.data.updated_at;
+      if (!syncedAt || remoteAt > syncedAt) {
+        if (dirty) { await push(); }
+        else {
+          var res = await sb.from(TABLE).select("state, updated_at").eq("user_id", session.user.id).maybeSingle();
+          if (res.error) { setStatus("offline"); return; }
+          if (!res.data) { await push(); return; }
+          impl.setState(res.data.state || {});
+          setSyncedAt(res.data.updated_at || remoteAt);
+          setStatus("synced");
+        }
+      } else {
+        setStatus(dirty ? "pending" : "synced");
       }
-    } else {
-      setStatus(dirty ? "pending" : "synced");
+    } finally {
+      pulling = false;
     }
   }
   async function push() {

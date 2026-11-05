@@ -446,3 +446,175 @@ test("news read/save state is wired (source guard)", () => {
   assert.match(html, /state\.news\.read/, "read state is read/written");
   assert.match(html, /data-nview/, "All/Unread/Saved view switch exists");
 });
+
+/* ---------------- mb-cloud: two-phase pull + in-flight guard ---------------- */
+
+const vm = require("node:vm");
+const cloudSrc = fs.readFileSync(path.join(__dirname, "..", "mb-cloud.js"), "utf8");
+
+async function flushTicks(n) {
+  for (let i = 0; i < (n || 25); i++) await new Promise(r => setImmediate(r));
+}
+
+// Load mb-cloud.js in a vm with a mocked Supabase client. `checkResult` /
+// `fullResult` may be values or functions returning the { data, error } pair
+// for the timestamp-only and full queries respectively.
+function loadCloud(opts) {
+  opts = opts || {};
+  const queries = [], upserts = [], setStateCalls = [];
+  const store = new Map(Object.entries(opts.storage || {}));
+  const storage = {
+    getItem: k => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: k => store.delete(k)
+  };
+  let gateResolve = null, gateUsed = false;
+  const gate = new Promise(r => { gateResolve = r; });
+  const sb = {
+    from() {
+      const q = {
+        _select: null, _upsert: null,
+        select(c) { this._select = c; return this; },
+        eq() { return this; },
+        upsert(p) { this._upsert = p; upserts.push(p); return this; },
+        async maybeSingle() {
+          if (this._upsert) return { data: { updated_at: this._upsert.updated_at }, error: null };
+          queries.push(this._select);
+          if (this._select === "updated_at") {
+            if (opts.checkGate && !gateUsed) { gateUsed = true; return gate; }
+            return typeof opts.checkResult === "function" ? opts.checkResult() : opts.checkResult;
+          }
+          return typeof opts.fullResult === "function" ? opts.fullResult() : opts.fullResult;
+        }
+      };
+      return q;
+    },
+    auth: {
+      onAuthStateChange() {},
+      async getSession() {
+        return { data: { session: { user: { id: "u1", email: "a@b.c" }, access_token: "tok" } } };
+      },
+      async signOut() {}
+    }
+  };
+  const winListeners = {}, docListeners = {};
+  const sandbox = {
+    console, Promise, Date, JSON, setTimeout, clearTimeout,
+    setInterval: () => 0, clearInterval: () => {},
+    localStorage: storage,
+    location: { protocol: "https:" },
+    document: {
+      hidden: false,
+      addEventListener: (e, fn) => { docListeners[e] = fn; },
+      createElement: () => ({}),
+      head: { appendChild() {} }
+    }
+  };
+  sandbox.window = sandbox;
+  sandbox.window.MB_CLOUD_CONFIG = { url: "https://x.supabase.co", anonKey: "anon", pullIntervalMs: 60000 };
+  sandbox.window.supabase = { createClient: () => sb };
+  sandbox.window.addEventListener = (e, fn) => { winListeners[e] = fn; };
+  vm.createContext(sandbox);
+  vm.runInContext(cloudSrc, sandbox);
+  return {
+    cloud: sandbox.window.mbCloud, queries, upserts, setStateCalls, storage,
+    triggerFocus() { if (winListeners.focus) winListeners.focus(); },
+    triggerVisible() { if (docListeners.visibilitychange) docListeners.visibilitychange(); },
+    releaseCheck(v) { gateResolve(v); }
+  };
+}
+
+async function startCloud(h, state) {
+  await flushTicks();
+  h.cloud.sync.start({
+    getState: () => state || {},
+    setState: s => h.setStateCalls.push(s)
+  });
+  await flushTicks();
+}
+
+const T1 = "2026-01-01T00:00:00.000Z";
+const T2 = "2026-01-02T00:00:00.000Z";
+
+test("pull: server not newer performs timestamp query only, never requests state", async () => {
+  const h = loadCloud({
+    storage: { "mb.sync.syncedAt": T2 },
+    checkResult: { data: { updated_at: T2 }, error: null },
+    fullResult: { data: { state: { remote: 1 }, updated_at: T2 }, error: null }
+  });
+  await startCloud(h);
+  assert.deepEqual(h.queries, ["updated_at"], "only the cheap timestamp query ran");
+  assert.ok(h.queries.every(q => !q.includes("state")), "the state column was never selected");
+  assert.equal(h.setStateCalls.length, 0, "no state was applied");
+  assert.equal(h.cloud.sync.status(), "synced");
+});
+
+test("pull: server newer downloads state once, applies it, updates syncedAt", async () => {
+  const remoteState = { todos: [{ id: "x" }], marker: "remote" };
+  const h = loadCloud({
+    storage: { "mb.sync.syncedAt": T1 },
+    checkResult: { data: { updated_at: T2 }, error: null },
+    fullResult: { data: { state: remoteState, updated_at: T2 }, error: null }
+  });
+  await startCloud(h);
+  assert.deepEqual(h.queries, ["updated_at", "state, updated_at"],
+    "one timestamp check followed by exactly one full download");
+  assert.deepEqual(h.setStateCalls, [remoteState], "state applied through setState");
+  assert.equal(h.storage.getItem("mb.sync.syncedAt"), T2, "syncedAt advanced to the remote timestamp");
+  assert.equal(h.cloud.sync.status(), "synced");
+});
+
+test("pull: no server row triggers a push", async () => {
+  const localState = { fresh: true };
+  const h = loadCloud({
+    storage: {},
+    checkResult: { data: null, error: null },
+    fullResult: { data: null, error: null }
+  });
+  await startCloud(h, localState);
+  assert.deepEqual(h.queries, ["updated_at"], "only the timestamp check ran before pushing");
+  assert.equal(h.upserts.length, 1, "push upserted the local state to create the row");
+  assert.deepEqual(h.upserts[0].state, localState);
+  assert.equal(h.setStateCalls.length, 0);
+});
+
+test("pull: concurrent calls while one is in flight run only one set of queries", async () => {
+  const h = loadCloud({
+    storage: { "mb.sync.syncedAt": T2 },
+    checkGate: true,
+    checkResult: { data: { updated_at: T2 }, error: null },
+    fullResult: { data: { state: {}, updated_at: T2 }, error: null }
+  });
+  await flushTicks();
+  h.cloud.sync.start({ getState: () => ({}), setState: s => h.setStateCalls.push(s) });
+  await flushTicks(5);
+  assert.deepEqual(h.queries, ["updated_at"], "first pull's check is in flight");
+  h.triggerFocus();
+  h.triggerFocus();
+  h.triggerVisible();
+  await flushTicks(5);
+  assert.deepEqual(h.queries, ["updated_at"], "overlapping pulls started no second query");
+  h.releaseCheck({ data: { updated_at: T2 }, error: null });
+  await flushTicks();
+  assert.deepEqual(h.queries, ["updated_at"], "the in-flight pull completed with one query set");
+  h.triggerFocus();
+  await flushTicks();
+  assert.equal(h.queries.length, 2, "guard cleared after finish: the next pull checks again");
+});
+
+test("pull: guard clears on query error so the next pull retries", async () => {
+  let calls = 0;
+  const h = loadCloud({
+    storage: { "mb.sync.syncedAt": T2 },
+    checkResult: () => (++calls === 1
+      ? { data: null, error: { message: "boom" } }
+      : { data: { updated_at: T2 }, error: null }),
+    fullResult: { data: { state: {}, updated_at: T2 }, error: null }
+  });
+  await startCloud(h);
+  assert.equal(h.cloud.sync.status(), "offline", "query error reports offline as before");
+  h.triggerFocus();
+  await flushTicks();
+  assert.equal(h.queries.length, 2, "a pull after the failed one runs a fresh check");
+  assert.equal(h.cloud.sync.status(), "synced");
+});
